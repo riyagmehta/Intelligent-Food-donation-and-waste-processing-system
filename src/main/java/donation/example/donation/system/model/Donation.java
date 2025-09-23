@@ -1,0 +1,34 @@
+package donation.example.donation.system.model;
+
+import com.fasterxml.jackson.annotation.JsonBackReference; // Import this
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Donation {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String itemName;
+    private Integer quantity;
+    private String unit;
+
+    private LocalDateTime donationDate = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    private DonationStatus status = DonationStatus.PENDING;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "donor_id")
+    @JsonBackReference
+    private Donor donor;
+}
