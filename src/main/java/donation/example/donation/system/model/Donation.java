@@ -1,6 +1,8 @@
 package donation.example.donation.system.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference; // Import this
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,4 +33,9 @@ public class Donation {
     @JoinColumn(name = "donor_id")
     @JsonBackReference
     private Donor donor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collection_center_id")
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+    private CollectionCenter collectionCenter;
 }

@@ -1,5 +1,6 @@
 package donation.example.donation.system.controller;
 
+import donation.example.donation.system.dto.DonorDTO;
 import donation.example.donation.system.model.Donor;
 import donation.example.donation.system.model.DonorType;
 import donation.example.donation.system.repository.DonorRepository;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/donors")
@@ -20,39 +22,47 @@ public class DonorController {
 
     // Get all donors
     @GetMapping
-    public List<Donor> getAllDonors() {
-        return donorRepository.findAll();
+    public List<DonorDTO> getAllDonors() {
+        return donorRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // Get donor by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Donor> getDonorById(@PathVariable Long id) {
+    public ResponseEntity<DonorDTO> getDonorById(@PathVariable Long id) {
         return donorRepository.findById(id)
-                .map(ResponseEntity::ok)
+                .map(donor -> ResponseEntity.ok(convertToDTO(donor)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     // Get donors by type
     @GetMapping("/type/{type}")
-    public List<Donor> getDonorsByType(@PathVariable DonorType type) {
-        return donorRepository.findByType(type);
+    public List<DonorDTO> getDonorsByType(@PathVariable DonorType type) {
+        return donorRepository.findByType(type)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // Create new donor
     @PostMapping
-    public Donor createDonor(@RequestBody Donor donor) {
-        return donorRepository.save(donor);
+    public DonorDTO createDonor(@RequestBody Donor donor) {
+        Donor saved = donorRepository.save(donor);
+        return convertToDTO(saved);
     }
 
     // Update donor
     @PutMapping("/{id}")
-    public ResponseEntity<Donor> updateDonor(@PathVariable Long id, @RequestBody Donor donorDetails) {
+    public ResponseEntity<DonorDTO> updateDonor(@PathVariable Long id, @RequestBody Donor donorDetails) {
         return donorRepository.findById(id).map(donor -> {
             donor.setName(donorDetails.getName());
             donor.setContact(donorDetails.getContact());
             donor.setLocation(donorDetails.getLocation());
             donor.setType(donorDetails.getType());
-            return ResponseEntity.ok(donorRepository.save(donor));
+            Donor updated = donorRepository.save(donor);
+            return ResponseEntity.ok(convertToDTO(updated));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -63,5 +73,16 @@ public class DonorController {
             donorRepository.delete(donor);
             return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // Helper method to convert Donor to DonorDTO
+    private DonorDTO convertToDTO(Donor donor) {
+        return new DonorDTO(
+                donor.getId(),
+                donor.getName(),
+                donor.getContact(),
+                donor.getLocation(),
+                donor.getType() != null ? donor.getType().name() : null
+        );
     }
 }
