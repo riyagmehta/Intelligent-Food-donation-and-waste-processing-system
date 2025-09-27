@@ -1,0 +1,36 @@
+package donation.example.donation.system.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Waste {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String itemName;
+    private Integer quantity;
+    private String unit;
+
+    private LocalDateTime wasteDate = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    private WasteStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "donation_id")
+    private Donation donation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collection_center_id")
+    private CollectionCenter collectionCenter;
+}

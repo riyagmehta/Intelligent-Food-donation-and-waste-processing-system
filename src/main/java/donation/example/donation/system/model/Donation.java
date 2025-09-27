@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -41,4 +43,7 @@ public class Donation {
 
     @OneToOne(mappedBy = "donation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Delivery delivery;
+
+    @OneToMany(mappedBy = "donation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Waste> wastes = new ArrayList<>();
 }
