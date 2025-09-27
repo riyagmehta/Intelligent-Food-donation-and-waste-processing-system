@@ -38,4 +38,7 @@ public class Donation {
     @JoinColumn(name = "collection_center_id")
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
     private CollectionCenter collectionCenter;
+
+    @OneToOne(mappedBy = "donation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Delivery delivery;
 }

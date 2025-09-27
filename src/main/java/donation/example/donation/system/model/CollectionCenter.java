@@ -31,4 +31,7 @@ public class CollectionCenter {
             generator = ObjectIdGenerators.PropertyGenerator.class,
             property = "id")
     private List<Donation> donations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "fromCenter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Delivery> deliveries = new ArrayList<>();
 }
