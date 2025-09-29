@@ -1,5 +1,6 @@
 package donation.example.donation.system.dto;
 
+import donation.example.donation.system.model.Unit;
 import donation.example.donation.system.model.WasteStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +16,7 @@ public class WasteDTO {
     private Long id;
     private String itemName;
     private Integer quantity;
-    private String unit;
+    private Unit unit;
     private LocalDateTime wasteDate;
     private WasteStatus status;
     private Long donationId;

@@ -19,7 +19,7 @@ public class Waste {
 
     private String itemName;
     private Integer quantity;
-    private String unit;
+    private Unit unit;
 
     private LocalDateTime wasteDate = LocalDateTime.now();
 

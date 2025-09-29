@@ -1,5 +1,7 @@
 package donation.example.donation.system.dto;
 
+import donation.example.donation.system.model.DonationType;
+import donation.example.donation.system.model.Unit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,9 +15,10 @@ public class DonationDTO {
     private Long id;
     private String itemName;
     private Integer quantity;
-    private String unit;
+    private Unit unit;
     private LocalDateTime donationDate;
     private String status;
     private Long donorId;
-    private CollectionCenterDTO collectionCenter; // can be null if not assigned
+    private DonationType donationType;
+    private CollectionCenterDTO collectionCenter;
 }

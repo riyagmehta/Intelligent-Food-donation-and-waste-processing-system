@@ -84,6 +84,7 @@ public class DonationController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    // Helper: convert Donation -> DonationDTO
     private DonationDTO mapToDTO(Donation donation) {
         CollectionCenterDTO centerDTO = null;
         CollectionCenter center = donation.getCollectionCenter();
@@ -105,6 +106,7 @@ public class DonationController {
                 donation.getDonationDate(),
                 donation.getStatus().name(),
                 donation.getDonor() != null ? donation.getDonor().getId() : null,
+                donation.getDonationType(),
                 centerDTO
         );
     }

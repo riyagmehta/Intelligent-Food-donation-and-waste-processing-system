@@ -24,9 +24,14 @@ public class Donation {
 
     private String itemName;
     private Integer quantity;
-    private String unit;
+
+    @Enumerated(EnumType.STRING)
+    private Unit unit;
 
     private LocalDateTime donationDate = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    private DonationType donationType;
 
     @Enumerated(EnumType.STRING)
     private DonationStatus status = DonationStatus.PENDING;

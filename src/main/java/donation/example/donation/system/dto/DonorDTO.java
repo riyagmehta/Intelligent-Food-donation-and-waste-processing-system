@@ -12,5 +12,5 @@ public class DonorDTO {
     private String name;
     private String contact;
     private String location;
-    private String type; // RESTAURANT, GROCERY, HOUSEHOLD
+
 }

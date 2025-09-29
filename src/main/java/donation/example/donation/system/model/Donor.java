@@ -23,8 +23,7 @@ public class Donor {
     private String contact;
     private String location;
 
-    @Enumerated(EnumType.STRING)
-    private DonorType type; // RESTAURANT, GROCERY, HOUSEHOLD
+
 
     @OneToMany(mappedBy = "donor", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

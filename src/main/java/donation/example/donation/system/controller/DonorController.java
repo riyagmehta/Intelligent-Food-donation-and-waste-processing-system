@@ -1,8 +1,8 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.DonorDTO;
+import donation.example.donation.system.model.DonationType;
 import donation.example.donation.system.model.Donor;
-import donation.example.donation.system.model.DonorType;
 import donation.example.donation.system.repository.DonorRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,11 +37,9 @@ public class DonorController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Get donors by type
-    @GetMapping("/type/{type}")
-    public List<DonorDTO> getDonorsByType(@PathVariable DonorType type) {
-        return donorRepository.findByType(type)
-                .stream()
+    @GetMapping("/by-type/{type}")
+    public List<DonorDTO> getDonorsByDonationType(@PathVariable DonationType type) {
+        return donorRepository.findByDonationType(type).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -60,7 +58,6 @@ public class DonorController {
             donor.setName(donorDetails.getName());
             donor.setContact(donorDetails.getContact());
             donor.setLocation(donorDetails.getLocation());
-            donor.setType(donorDetails.getType());
             Donor updated = donorRepository.save(donor);
             return ResponseEntity.ok(convertToDTO(updated));
         }).orElse(ResponseEntity.notFound().build());
@@ -81,8 +78,7 @@ public class DonorController {
                 donor.getId(),
                 donor.getName(),
                 donor.getContact(),
-                donor.getLocation(),
-                donor.getType() != null ? donor.getType().name() : null
+                donor.getLocation()
         );
     }
 }
