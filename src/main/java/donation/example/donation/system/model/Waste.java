@@ -19,6 +19,8 @@ public class Waste {
 
     private String itemName;
     private Integer quantity;
+
+    @Enumerated(EnumType.STRING)
     private Unit unit;
 
     private LocalDateTime wasteDate = LocalDateTime.now();
