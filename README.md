@@ -1,6 +1,6 @@
 # 🥗 Intelligent Food Donation and Waste Processing System
 
-A backend system built with **Spring Boot** and **PostgreSQL** to manage food donations, collection centers, deliveries, and waste processing efficiently.
+A fullstack application built with **Spring Boot** and **React** to manage food donations, collection centers, deliveries, and waste processing efficiently.
 It connects **donors**, **collection centers**, and **logistics teams** to minimize food waste and ensure proper resource utilization.
 
 ---
