@@ -3,8 +3,10 @@ package donation.example.donation.system.controller;
 import donation.example.donation.system.dto.CollectionCenterDTO;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Donation;
+import donation.example.donation.system.model.entity.User;
 import donation.example.donation.system.repository.CollectionCenterRepository;
 import donation.example.donation.system.repository.DonationRepository;
+import donation.example.donation.system.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,11 +19,14 @@ public class CollectionCenterController {
 
     private final CollectionCenterRepository centerRepository;
     private final DonationRepository donationRepository;
+    private final UserRepository userRepository;
 
     public CollectionCenterController(CollectionCenterRepository centerRepository,
-                                      DonationRepository donationRepository) {
+                                      DonationRepository donationRepository,
+                                      UserRepository userRepository) {
         this.centerRepository = centerRepository;
         this.donationRepository = donationRepository;
+        this.userRepository = userRepository;
     }
 
     // Get all centers
@@ -43,6 +48,8 @@ public class CollectionCenterController {
     // Create a new center
     @PostMapping
     public CollectionCenterDTO createCenter(@RequestBody CollectionCenter center) {
+        User user = userRepository.save(center.getUser());
+        center.setUser(user);
         return mapToDTO(centerRepository.save(center));
     }
 
