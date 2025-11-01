@@ -1,6 +1,7 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.DonorDTO;
+import donation.example.donation.system.mapper.DonorMapper;
 import donation.example.donation.system.model.entity.User;
 import donation.example.donation.system.repository.UserRepository;
 import donation.example.donation.system.type.DonationType;
@@ -20,9 +21,12 @@ public class DonorController {
 
     private final UserRepository userRepository;
 
-    public DonorController(DonorRepository donorRepository, UserRepository userRepository) {
+    private final DonorMapper donorMapper;
+
+    public DonorController(DonorRepository donorRepository, UserRepository userRepository, DonorMapper donorMapper) {
         this.donorRepository = donorRepository;
         this.userRepository = userRepository;
+        this.donorMapper = donorMapper;
     }
 
     // Get all donors
@@ -81,11 +85,6 @@ public class DonorController {
 
     // Helper method to convert Donor to DonorDTO
     private DonorDTO convertToDTO(Donor donor) {
-        return new DonorDTO(
-                donor.getId(),
-                donor.getName(),
-                donor.getContact(),
-                donor.getLocation()
-        );
+        return donorMapper.donorToDonorDTO(donor);
     }
 }

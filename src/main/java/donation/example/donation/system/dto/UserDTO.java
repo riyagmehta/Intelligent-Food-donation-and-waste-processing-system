@@ -7,11 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DonorDTO {
-    private Long id;
-    private String name;
-    private String contact;
-    private String location;
-    private UserDTO user;
-
+public class UserDTO {
+    Long id;
+    String username;
+    String email;
 }
