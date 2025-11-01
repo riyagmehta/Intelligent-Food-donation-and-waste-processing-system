@@ -2,6 +2,7 @@ package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.DeliveryDTO;
 import donation.example.donation.system.dto.DeliveryRequestDTO;
+import donation.example.donation.system.mapper.DeliveryMapper;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Delivery;
 import donation.example.donation.system.model.entity.Donation;
@@ -21,20 +22,23 @@ public class DeliveryController {
     private final DeliveryRepository deliveryRepository;
     private final DonationRepository donationRepository;
     private final CollectionCenterRepository centerRepository;
+    private final DeliveryMapper deliveryMapper;
 
     public DeliveryController(DeliveryRepository deliveryRepository,
                               DonationRepository donationRepository,
-                              CollectionCenterRepository centerRepository) {
+                              CollectionCenterRepository centerRepository,
+                              DeliveryMapper deliveryMapper) {
         this.deliveryRepository = deliveryRepository;
         this.donationRepository = donationRepository;
         this.centerRepository = centerRepository;
+        this.deliveryMapper = deliveryMapper;
     }
 
     // Get all deliveries
     @GetMapping
     public List<DeliveryDTO> getAllDeliveries() {
         return deliveryRepository.findAll().stream()
-                .map(this::mapToDTO)
+                .map(deliveryMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -42,7 +46,7 @@ public class DeliveryController {
     @GetMapping("/{id}")
     public ResponseEntity<DeliveryDTO> getDeliveryById(@PathVariable Long id) {
         return deliveryRepository.findById(id)
-                .map(delivery -> ResponseEntity.ok(mapToDTO(delivery)))
+                .map(delivery -> ResponseEntity.ok(deliveryMapper.toDTO(delivery)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -64,7 +68,7 @@ public class DeliveryController {
                 .deliveryTime(request.getDeliveryTime())
                 .build();
 
-        return ResponseEntity.ok(mapToDTO(deliveryRepository.save(delivery)));
+        return ResponseEntity.ok(deliveryMapper.toDTO(deliveryRepository.save(delivery)));
     }
 
     // Update delivery
@@ -85,7 +89,7 @@ public class DeliveryController {
             delivery.setPickupTime(request.getPickupTime());
             delivery.setDeliveryTime(request.getDeliveryTime());
 
-            return ResponseEntity.ok(mapToDTO(deliveryRepository.save(delivery)));
+            return ResponseEntity.ok(deliveryMapper.toDTO(deliveryRepository.save(delivery)));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -98,18 +102,4 @@ public class DeliveryController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    private DeliveryDTO mapToDTO(Delivery delivery) {
-        return new DeliveryDTO(
-                delivery.getId(),
-                delivery.getDonation().getId(),
-                delivery.getDonation().getItemName(),
-                delivery.getFromCenter().getId(),
-                delivery.getFromCenter().getName(),
-                delivery.getDestinationAddress(),
-                delivery.getDriverName(),
-                delivery.getStatus(),
-                delivery.getPickupTime(),
-                delivery.getDeliveryTime()
-        );
-    }
 }
