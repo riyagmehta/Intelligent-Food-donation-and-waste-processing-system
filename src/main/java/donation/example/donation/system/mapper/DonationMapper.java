@@ -8,7 +8,7 @@ import donation.example.donation.system.model.entity.Donor;
 import donation.example.donation.system.model.entity.User;
 import org.mapstruct.Mapper;
 
-@Mapper(componentModel = "spring", uses = {DonorMapper.class, CollectionMapper.class})
+@Mapper(componentModel = "spring", uses = {DonorMapper.class, CollectionMapper.class, WasteMapper.class})
 public interface DonationMapper {
 
     DonationDTO donationToDonationDTO(Donation donation);

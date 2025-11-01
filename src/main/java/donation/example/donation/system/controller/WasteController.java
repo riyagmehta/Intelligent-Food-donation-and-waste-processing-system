@@ -1,6 +1,7 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.WasteDTO;
+import donation.example.donation.system.mapper.WasteMapper;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Donation;
 import donation.example.donation.system.model.entity.Waste;
@@ -22,13 +23,16 @@ public class WasteController {
     private final WasteRepository wasteRepository;
     private final DonationRepository donationRepository;
     private final CollectionCenterRepository centerRepository;
+    private final WasteMapper wasteMapper;
 
     public WasteController(WasteRepository wasteRepository,
                            DonationRepository donationRepository,
-                           CollectionCenterRepository centerRepository) {
+                           CollectionCenterRepository centerRepository,
+                           WasteMapper wasteMapper) {
         this.wasteRepository = wasteRepository;
         this.donationRepository = donationRepository;
         this.centerRepository = centerRepository;
+        this.wasteMapper = wasteMapper;
     }
 
     // Create a new waste record
@@ -50,19 +54,19 @@ public class WasteController {
         waste.setCollectionCenter(center);
 
         Waste savedWaste = wasteRepository.save(waste);
-        return ResponseEntity.ok(mapToDTO(savedWaste));
+        return ResponseEntity.ok(wasteMapper.toDTO(savedWaste));
     }
 
     // Get all waste records
     @GetMapping
     public List<WasteDTO> getAllWaste() {
-        return wasteRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
+        return wasteRepository.findAll().stream().map(wasteMapper::toDTO).collect(Collectors.toList());
     }
 
     // Get waste records by status
     @GetMapping("/status/{status}")
     public List<WasteDTO> getWasteByStatus(@PathVariable WasteStatus status) {
-        return wasteRepository.findByStatus(status).stream().map(this::mapToDTO).collect(Collectors.toList());
+        return wasteRepository.findByStatus(status).stream().map(wasteMapper::toDTO).collect(Collectors.toList());
     }
 
     // Update the status of a waste record
@@ -71,21 +75,8 @@ public class WasteController {
         return wasteRepository.findById(id).map(waste -> {
             waste.setStatus(status);
             Waste updatedWaste = wasteRepository.save(waste);
-            return ResponseEntity.ok(mapToDTO(updatedWaste));
+            return ResponseEntity.ok(wasteMapper.toDTO(updatedWaste));
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // Helper method to map Waste entity to WasteDTO
-    private WasteDTO mapToDTO(Waste waste) {
-        return new WasteDTO(
-                waste.getId(),
-                waste.getItemName(),
-                waste.getQuantity(),
-                waste.getUnit(),
-                waste.getWasteDate(),
-                waste.getStatus(),
-                waste.getDonation() != null ? waste.getDonation().getId() : null,
-                waste.getCollectionCenter() != null ? waste.getCollectionCenter().getId() : null
-        );
-    }
 }
