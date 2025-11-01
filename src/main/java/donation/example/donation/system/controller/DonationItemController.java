@@ -45,7 +45,7 @@ public class DonationItemController {
                 .orElseThrow(() -> new RuntimeException("Center not found with id: " + request.getCollectionCenterId()));
 
         DonationItem donationItem = new DonationItem();
-        donationItem.setItemName(request.getItemName());
+        donationItem.setName(request.getItemName());
         donationItem.setQuantity(request.getQuantity());
         donationItem.setUnit(request.getUnit());
         donationItem.setStatus(WasteStatus.PENDING);

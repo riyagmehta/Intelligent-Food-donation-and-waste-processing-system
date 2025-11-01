@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonBackReference; // Import this
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import donation.example.donation.system.type.DonationStatus;
-import donation.example.donation.system.type.DonationType;
-import donation.example.donation.system.type.Unit;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,16 +23,9 @@ public class Donation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String itemName;
-    private Integer quantity;
-
-    @Enumerated(EnumType.STRING)
-    private Unit unit;
+    private String name;
 
     private LocalDateTime donationDate = LocalDateTime.now();
-
-    @Enumerated(EnumType.STRING)
-    private DonationType donationType;
 
     @Enumerated(EnumType.STRING)
     private DonationStatus status = DonationStatus.PENDING;

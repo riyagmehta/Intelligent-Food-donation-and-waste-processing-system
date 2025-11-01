@@ -1,5 +1,6 @@
 package donation.example.donation.system.model.entity;
 
+import donation.example.donation.system.type.DonationType;
 import donation.example.donation.system.type.Unit;
 import donation.example.donation.system.type.WasteStatus;
 import jakarta.persistence.*;
@@ -19,11 +20,14 @@ public class DonationItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String itemName;
+    private String name;
     private Integer quantity;
 
     @Enumerated(EnumType.STRING)
     private Unit unit;
+
+    @Enumerated(EnumType.STRING)
+    private DonationType type;
 
     private LocalDateTime wasteDate = LocalDateTime.now();
 

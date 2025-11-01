@@ -48,9 +48,8 @@ public class DonorController {
 
     @GetMapping("/by-type/{type}")
     public List<DonorDTO> getDonorsByDonationType(@PathVariable DonationType type) {
-        return donorRepository.findByDonationType(type).stream()
-                .map(donorMapper::donorToDonorDTO)
-                .collect(Collectors.toList());
+        // TODO - does it really needed ?
+        return null;
     }
 
     // Create new donor

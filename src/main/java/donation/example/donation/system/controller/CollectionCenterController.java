@@ -89,16 +89,17 @@ public class CollectionCenterController {
         Donation donation = donationRepository.findById(donationId)
                 .orElseThrow(() -> new RuntimeException("Donation not found"));
 
-        int newLoad = center.getCurrentLoad() + donation.getQuantity();
-        if (newLoad > center.getMaxCapacity()) {
-            throw new RuntimeException("Center capacity exceeded");
-        }
+//         TODO - fix the logic
+//        int newLoad = center.getCurrentLoad() + donation.getQuantity();
+//        if (newLoad > center.getMaxCapacity()) {
+//            throw new RuntimeException("Center capacity exceeded");
+//        }
 
         donation.setCollectionCenter(center);
         if (!center.getDonations().contains(donation)) {
             center.getDonations().add(donation);
         }
-        center.setCurrentLoad(newLoad);
+//        center.setCurrentLoad(newLoad);
 
         donationRepository.save(donation);
         return ResponseEntity.ok(mapToDTO(centerRepository.save(center)));

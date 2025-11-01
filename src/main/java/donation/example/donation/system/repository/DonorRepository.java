@@ -11,6 +11,4 @@ import java.util.List;
 
 @Repository
 public interface DonorRepository extends JpaRepository<Donor, Long> {
-    @Query("SELECT DISTINCT d FROM Donor d JOIN d.donations donation WHERE donation.donationType = :type")
-    List<Donor> findByDonationType(@Param("type") DonationType type);
 }
