@@ -1,6 +1,6 @@
 package donation.example.donation.system.security;
 
-import donation.example.donation.system.model.User;
+import donation.example.donation.system.model.entity.User;
 import donation.example.donation.system.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

@@ -1,5 +1,6 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
+import donation.example.donation.system.type.DeliveryStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

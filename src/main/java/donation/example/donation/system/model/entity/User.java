@@ -1,5 +1,6 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
+import donation.example.donation.system.type.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,12 @@ public class User {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user")
+    private Donor donor;
+
+    @OneToOne(mappedBy = "user")
+    private CollectionCenter collectionCenter;
 
     public User(String username, String email, String password) {
         this.username = username;

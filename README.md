@@ -1,7 +1,7 @@
 # 🥗 Intelligent Food Donation and Waste Processing System
 
-A fullstack application built with **Spring Boot** and **React** to manage food donations, collection centers, deliveries, and waste processing efficiently.
-It connects **donors**, **collection centers**, and **logistics teams** to minimize food waste and ensure proper resource utilization.
+A fullstack application built with **Spring Boot** and **React** to manage food donations, collection centers, deliveries, and donationItem processing efficiently.
+It connects **donors**, **collection centers**, and **logistics teams** to minimize food donationItem and ensure proper resource utilization.
 
 ---
 
@@ -10,8 +10,8 @@ It connects **donors**, **collection centers**, and **logistics teams** to minim
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/riyagmehta/Intelligent-Food-donation-and-waste-processing-system.git
-cd Intelligent-Food-donation-and-waste-processing-system
+git clone https://github.com/riyagmehta/Intelligent-Food-donation-and-donationItem-processing-system.git
+cd Intelligent-Food-donation-and-donationItem-processing-system
 ```
 
 ### 2️⃣ Configure PostgreSQL

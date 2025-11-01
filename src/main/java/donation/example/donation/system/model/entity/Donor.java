@@ -1,4 +1,4 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference; // Import this
 import jakarta.persistence.*;
@@ -23,7 +23,9 @@ public class Donor {
     private String contact;
     private String location;
 
-
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @OneToMany(mappedBy = "donor", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

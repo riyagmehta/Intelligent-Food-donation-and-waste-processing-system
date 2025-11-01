@@ -1,6 +1,6 @@
 package donation.example.donation.system.repository;
 
-import donation.example.donation.system.model.User;
+import donation.example.donation.system.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
