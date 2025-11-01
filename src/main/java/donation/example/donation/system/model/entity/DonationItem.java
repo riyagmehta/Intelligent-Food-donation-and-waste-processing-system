@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Waste {
+public class DonationItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

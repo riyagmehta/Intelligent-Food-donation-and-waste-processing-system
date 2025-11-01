@@ -39,5 +39,5 @@ public class CollectionCenter {
     private List<Delivery> deliveries = new ArrayList<>();
 
     @OneToMany(mappedBy = "collectionCenter", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Waste> wastes = new ArrayList<>();
+    private List<DonationItem> donationItems = new ArrayList<>();
 }

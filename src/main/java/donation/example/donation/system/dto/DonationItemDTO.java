@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WasteDTO {
+public class DonationItemDTO {
 
     private Long id;
     private String itemName;

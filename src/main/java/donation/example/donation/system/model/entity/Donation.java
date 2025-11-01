@@ -53,5 +53,5 @@ public class Donation {
     private Delivery delivery;
 
     @OneToMany(mappedBy = "donation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Waste> wastes = new ArrayList<>();
+    private List<DonationItem> donationItems = new ArrayList<>();
 }

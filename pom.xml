@@ -10,7 +10,7 @@
 	<artifactId>donation-system</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>donation-system</name>
-	<description>intelligent food donation and waste processing system</description>
+	<description>intelligent food donation and donationItem processing system</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
