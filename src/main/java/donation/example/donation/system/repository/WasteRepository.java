@@ -1,7 +1,7 @@
 package donation.example.donation.system.repository;
 
-import donation.example.donation.system.model.Waste;
-import donation.example.donation.system.model.WasteStatus;
+import donation.example.donation.system.model.entity.Waste;
+import donation.example.donation.system.type.WasteStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

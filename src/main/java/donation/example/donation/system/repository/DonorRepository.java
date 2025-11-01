@@ -1,7 +1,7 @@
 package donation.example.donation.system.repository;
 
-import donation.example.donation.system.model.Donor;
-import donation.example.donation.system.model.DonationType;
+import donation.example.donation.system.model.entity.Donor;
+import donation.example.donation.system.type.DonationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

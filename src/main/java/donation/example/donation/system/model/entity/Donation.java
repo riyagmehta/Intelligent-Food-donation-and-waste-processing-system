@@ -1,8 +1,11 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference; // Import this
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import donation.example.donation.system.type.DonationStatus;
+import donation.example.donation.system.type.DonationType;
+import donation.example.donation.system.type.Unit;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;

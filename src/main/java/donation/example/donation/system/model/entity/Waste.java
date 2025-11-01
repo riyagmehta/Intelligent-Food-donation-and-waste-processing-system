@@ -1,5 +1,7 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
+import donation.example.donation.system.type.Unit;
+import donation.example.donation.system.type.WasteStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

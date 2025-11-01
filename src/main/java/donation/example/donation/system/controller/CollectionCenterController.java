@@ -1,8 +1,8 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.CollectionCenterDTO;
-import donation.example.donation.system.model.CollectionCenter;
-import donation.example.donation.system.model.Donation;
+import donation.example.donation.system.model.entity.CollectionCenter;
+import donation.example.donation.system.model.entity.Donation;
 import donation.example.donation.system.repository.CollectionCenterRepository;
 import donation.example.donation.system.repository.DonationRepository;
 import org.springframework.http.ResponseEntity;

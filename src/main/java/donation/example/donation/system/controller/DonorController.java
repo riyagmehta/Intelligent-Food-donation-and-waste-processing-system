@@ -1,8 +1,10 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.DonorDTO;
-import donation.example.donation.system.model.DonationType;
-import donation.example.donation.system.model.Donor;
+import donation.example.donation.system.model.entity.User;
+import donation.example.donation.system.repository.UserRepository;
+import donation.example.donation.system.type.DonationType;
+import donation.example.donation.system.model.entity.Donor;
 import donation.example.donation.system.repository.DonorRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +18,11 @@ public class DonorController {
 
     private final DonorRepository donorRepository;
 
-    public DonorController(DonorRepository donorRepository) {
+    private final UserRepository userRepository;
+
+    public DonorController(DonorRepository donorRepository, UserRepository userRepository) {
         this.donorRepository = donorRepository;
+        this.userRepository = userRepository;
     }
 
     // Get all donors
@@ -47,6 +52,8 @@ public class DonorController {
     // Create new donor
     @PostMapping
     public DonorDTO createDonor(@RequestBody Donor donor) {
+        User user = userRepository.save(donor.getUser());
+        donor.setUser(user);
         Donor saved = donorRepository.save(donor);
         return convertToDTO(saved);
     }

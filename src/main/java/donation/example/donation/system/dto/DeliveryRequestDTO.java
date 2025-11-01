@@ -1,6 +1,6 @@
 package donation.example.donation.system.dto;
 
-import donation.example.donation.system.model.DeliveryStatus;
+import donation.example.donation.system.type.DeliveryStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

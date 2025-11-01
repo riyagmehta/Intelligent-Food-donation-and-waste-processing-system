@@ -1,7 +1,7 @@
 package donation.example.donation.system.dto;
 
-import donation.example.donation.system.model.DonationType;
-import donation.example.donation.system.model.Unit;
+import donation.example.donation.system.type.DonationType;
+import donation.example.donation.system.type.Unit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
