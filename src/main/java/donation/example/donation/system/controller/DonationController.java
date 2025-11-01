@@ -2,6 +2,7 @@ package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.CollectionCenterDTO;
 import donation.example.donation.system.dto.DonationDTO;
+import donation.example.donation.system.mapper.DonationMapper;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Donation;
 import donation.example.donation.system.type.DonationStatus;
@@ -19,17 +20,19 @@ public class DonationController {
 
     private final DonationRepository donationRepository;
     private final DonorRepository donorRepository;
+    private final DonationMapper donationMapper;
 
-    public DonationController(DonationRepository donationRepository, DonorRepository donorRepository) {
+    public DonationController(DonationRepository donationRepository, DonorRepository donorRepository, DonationMapper donationMapper) {
         this.donationRepository = donationRepository;
         this.donorRepository = donorRepository;
+        this.donationMapper = donationMapper;
     }
 
     // Get all donations
     @GetMapping
     public List<DonationDTO> getAllDonations() {
         return donationRepository.findAll().stream()
-                .map(this::mapToDTO)
+                .map(donationMapper::donationToDonationDTO)
                 .collect(Collectors.toList());
     }
 
@@ -37,7 +40,7 @@ public class DonationController {
     @GetMapping("/{id}")
     public ResponseEntity<DonationDTO> getDonationById(@PathVariable Long id) {
         return donationRepository.findById(id)
-                .map(donation -> ResponseEntity.ok(mapToDTO(donation)))
+                .map(donation -> ResponseEntity.ok(donationMapper.donationToDonationDTO(donation)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -45,7 +48,7 @@ public class DonationController {
     @GetMapping("/status/{status}")
     public List<DonationDTO> getDonationsByStatus(@PathVariable DonationStatus status) {
         return donationRepository.findByStatus(status).stream()
-                .map(this::mapToDTO)
+                .map(donationMapper::donationToDonationDTO)
                 .collect(Collectors.toList());
     }
 
@@ -53,7 +56,7 @@ public class DonationController {
     @GetMapping("/donor/{donorId}")
     public List<DonationDTO> getDonationsByDonor(@PathVariable Long donorId) {
         return donationRepository.findByDonorId(donorId).stream()
-                .map(this::mapToDTO)
+                .map(donationMapper::donationToDonationDTO)
                 .collect(Collectors.toList());
     }
 
@@ -62,7 +65,7 @@ public class DonationController {
     public ResponseEntity<DonationDTO> createDonation(@PathVariable Long donorId, @RequestBody Donation donation) {
         return donorRepository.findById(donorId).map(donor -> {
             donation.setDonor(donor);
-            return ResponseEntity.ok(mapToDTO(donationRepository.save(donation)));
+            return ResponseEntity.ok(donationMapper.donationToDonationDTO(donationRepository.save(donation)));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -71,7 +74,7 @@ public class DonationController {
     public ResponseEntity<DonationDTO> updateDonationStatus(@PathVariable Long id, @RequestBody DonationStatus status) {
         return donationRepository.findById(id).map(donation -> {
             donation.setStatus(status);
-            return ResponseEntity.ok(mapToDTO(donationRepository.save(donation)));
+            return ResponseEntity.ok(donationMapper.donationToDonationDTO(donationRepository.save(donation)));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -82,32 +85,5 @@ public class DonationController {
             donationRepository.delete(donation);
             return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Helper: convert Donation -> DonationDTO
-    private DonationDTO mapToDTO(Donation donation) {
-        CollectionCenterDTO centerDTO = null;
-        CollectionCenter center = donation.getCollectionCenter();
-        if (center != null) {
-            centerDTO = new CollectionCenterDTO(
-                    center.getId(),
-                    center.getName(),
-                    center.getLocation(),
-                    center.getMaxCapacity(),
-                    center.getCurrentLoad()
-            );
-        }
-
-        return new DonationDTO(
-                donation.getId(),
-                donation.getItemName(),
-                donation.getQuantity(),
-                donation.getUnit(),
-                donation.getDonationDate(),
-                donation.getStatus().name(),
-                donation.getDonor() != null ? donation.getDonor().getId() : null,
-                donation.getDonationType(),
-                centerDTO
-        );
     }
 }

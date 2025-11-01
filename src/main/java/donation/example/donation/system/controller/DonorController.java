@@ -34,7 +34,7 @@ public class DonorController {
     public List<DonorDTO> getAllDonors() {
         return donorRepository.findAll()
                 .stream()
-                .map(this::convertToDTO)
+                .map(donorMapper::donorToDonorDTO)
                 .collect(Collectors.toList());
     }
 
@@ -42,14 +42,14 @@ public class DonorController {
     @GetMapping("/{id}")
     public ResponseEntity<DonorDTO> getDonorById(@PathVariable Long id) {
         return donorRepository.findById(id)
-                .map(donor -> ResponseEntity.ok(convertToDTO(donor)))
+                .map(donor -> ResponseEntity.ok(donorMapper.donorToDonorDTO(donor)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/by-type/{type}")
     public List<DonorDTO> getDonorsByDonationType(@PathVariable DonationType type) {
         return donorRepository.findByDonationType(type).stream()
-                .map(this::convertToDTO)
+                .map(donorMapper::donorToDonorDTO)
                 .collect(Collectors.toList());
     }
 
@@ -59,7 +59,7 @@ public class DonorController {
         User user = userRepository.save(donor.getUser());
         donor.setUser(user);
         Donor saved = donorRepository.save(donor);
-        return convertToDTO(saved);
+        return donorMapper.donorToDonorDTO(saved);
     }
 
     // Update donor
@@ -70,7 +70,7 @@ public class DonorController {
             donor.setContact(donorDetails.getContact());
             donor.setLocation(donorDetails.getLocation());
             Donor updated = donorRepository.save(donor);
-            return ResponseEntity.ok(convertToDTO(updated));
+            return ResponseEntity.ok(donorMapper.donorToDonorDTO(updated));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -81,10 +81,5 @@ public class DonorController {
             donorRepository.delete(donor);
             return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Helper method to convert Donor to DonorDTO
-    private DonorDTO convertToDTO(Donor donor) {
-        return donorMapper.donorToDonorDTO(donor);
     }
 }

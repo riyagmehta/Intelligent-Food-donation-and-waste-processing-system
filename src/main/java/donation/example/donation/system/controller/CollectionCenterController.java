@@ -1,6 +1,7 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.CollectionCenterDTO;
+import donation.example.donation.system.mapper.CollectionMapper;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Donation;
 import donation.example.donation.system.model.entity.User;
@@ -20,13 +21,15 @@ public class CollectionCenterController {
     private final CollectionCenterRepository centerRepository;
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
-
+    private final CollectionMapper collectionMapper;
     public CollectionCenterController(CollectionCenterRepository centerRepository,
                                       DonationRepository donationRepository,
-                                      UserRepository userRepository) {
+                                      UserRepository userRepository,
+                                      CollectionMapper collectionMapper) {
         this.centerRepository = centerRepository;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
+        this.collectionMapper = collectionMapper;
     }
 
     // Get all centers
@@ -102,12 +105,6 @@ public class CollectionCenterController {
     }
 
     private CollectionCenterDTO mapToDTO(CollectionCenter center) {
-        return new CollectionCenterDTO(
-                center.getId(),
-                center.getName(),
-                center.getLocation(),
-                center.getMaxCapacity(),
-                center.getCurrentLoad()
-        );
+        return collectionMapper.collectionCenterToCollectionCenterDTO(center);
     }
 }

@@ -13,4 +13,5 @@ public class CollectionCenterDTO {
     private String location;
     private Integer maxCapacity;
     private Integer currentLoad;
+    private UserDTO user;
 }

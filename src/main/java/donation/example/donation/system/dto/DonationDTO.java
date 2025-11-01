@@ -18,7 +18,7 @@ public class DonationDTO {
     private Unit unit;
     private LocalDateTime donationDate;
     private String status;
-    private Long donorId;
+    private DonorDTO donor;
     private DonationType donationType;
     private CollectionCenterDTO collectionCenter;
 }
