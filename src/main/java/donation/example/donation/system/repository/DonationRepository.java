@@ -1,7 +1,7 @@
 package donation.example.donation.system.repository;
 
-import donation.example.donation.system.model.Donation;
-import donation.example.donation.system.model.DonationStatus;
+import donation.example.donation.system.model.entity.Donation;
+import donation.example.donation.system.type.DonationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

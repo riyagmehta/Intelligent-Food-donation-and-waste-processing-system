@@ -1,7 +1,7 @@
 package donation.example.donation.system.controller;
 
-import donation.example.donation.system.model.Role;
-import donation.example.donation.system.model.User;
+import donation.example.donation.system.type.Role;
+import donation.example.donation.system.model.entity.User;
 import donation.example.donation.system.repository.UserRepository;
 import donation.example.donation.system.security.JWTUtil;
 import org.springframework.http.ResponseEntity;

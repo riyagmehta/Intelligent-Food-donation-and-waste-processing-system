@@ -1,8 +1,11 @@
 package donation.example.donation.system.controller;
 
 import donation.example.donation.system.dto.DonorDTO;
-import donation.example.donation.system.model.DonationType;
-import donation.example.donation.system.model.Donor;
+import donation.example.donation.system.mapper.DonorMapper;
+import donation.example.donation.system.model.entity.User;
+import donation.example.donation.system.repository.UserRepository;
+import donation.example.donation.system.type.DonationType;
+import donation.example.donation.system.model.entity.Donor;
 import donation.example.donation.system.repository.DonorRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +19,14 @@ public class DonorController {
 
     private final DonorRepository donorRepository;
 
-    public DonorController(DonorRepository donorRepository) {
+    private final UserRepository userRepository;
+
+    private final DonorMapper donorMapper;
+
+    public DonorController(DonorRepository donorRepository, UserRepository userRepository, DonorMapper donorMapper) {
         this.donorRepository = donorRepository;
+        this.userRepository = userRepository;
+        this.donorMapper = donorMapper;
     }
 
     // Get all donors
@@ -25,7 +34,7 @@ public class DonorController {
     public List<DonorDTO> getAllDonors() {
         return donorRepository.findAll()
                 .stream()
-                .map(this::convertToDTO)
+                .map(donorMapper::donorToDonorDTO)
                 .collect(Collectors.toList());
     }
 
@@ -33,22 +42,23 @@ public class DonorController {
     @GetMapping("/{id}")
     public ResponseEntity<DonorDTO> getDonorById(@PathVariable Long id) {
         return donorRepository.findById(id)
-                .map(donor -> ResponseEntity.ok(convertToDTO(donor)))
+                .map(donor -> ResponseEntity.ok(donorMapper.donorToDonorDTO(donor)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/by-type/{type}")
     public List<DonorDTO> getDonorsByDonationType(@PathVariable DonationType type) {
-        return donorRepository.findByDonationType(type).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        // TODO - does it really needed ?
+        return null;
     }
 
     // Create new donor
     @PostMapping
     public DonorDTO createDonor(@RequestBody Donor donor) {
+        User user = userRepository.save(donor.getUser());
+        donor.setUser(user);
         Donor saved = donorRepository.save(donor);
-        return convertToDTO(saved);
+        return donorMapper.donorToDonorDTO(saved);
     }
 
     // Update donor
@@ -59,7 +69,7 @@ public class DonorController {
             donor.setContact(donorDetails.getContact());
             donor.setLocation(donorDetails.getLocation());
             Donor updated = donorRepository.save(donor);
-            return ResponseEntity.ok(convertToDTO(updated));
+            return ResponseEntity.ok(donorMapper.donorToDonorDTO(updated));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -70,15 +80,5 @@ public class DonorController {
             donorRepository.delete(donor);
             return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Helper method to convert Donor to DonorDTO
-    private DonorDTO convertToDTO(Donor donor) {
-        return new DonorDTO(
-                donor.getId(),
-                donor.getName(),
-                donor.getContact(),
-                donor.getLocation()
-        );
     }
 }

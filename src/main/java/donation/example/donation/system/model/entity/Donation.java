@@ -1,8 +1,9 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference; // Import this
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import donation.example.donation.system.type.DonationStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,16 +23,9 @@ public class Donation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String itemName;
-    private Integer quantity;
-
-    @Enumerated(EnumType.STRING)
-    private Unit unit;
+    private String name;
 
     private LocalDateTime donationDate = LocalDateTime.now();
-
-    @Enumerated(EnumType.STRING)
-    private DonationType donationType;
 
     @Enumerated(EnumType.STRING)
     private DonationStatus status = DonationStatus.PENDING;
@@ -50,5 +44,5 @@ public class Donation {
     private Delivery delivery;
 
     @OneToMany(mappedBy = "donation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Waste> wastes = new ArrayList<>();
+    private List<DonationItem> donationItems = new ArrayList<>();
 }

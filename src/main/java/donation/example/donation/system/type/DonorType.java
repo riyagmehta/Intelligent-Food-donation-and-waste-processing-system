@@ -1,4 +1,4 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.type;
 
 public enum DonorType {
     RESTAURANT,

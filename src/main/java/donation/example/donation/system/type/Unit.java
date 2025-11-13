@@ -1,4 +1,4 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.type;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

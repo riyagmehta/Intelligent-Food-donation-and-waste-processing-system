@@ -1,7 +1,6 @@
-package donation.example.donation.system.model;
+package donation.example.donation.system.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -26,6 +25,10 @@ public class CollectionCenter {
     private Integer maxCapacity;   // maximum units this center can hold
     private Integer currentLoad = 0; // how many units are currently stored
 
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @OneToMany(mappedBy = "collectionCenter", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIdentityInfo(
             generator = ObjectIdGenerators.PropertyGenerator.class,
@@ -36,5 +39,5 @@ public class CollectionCenter {
     private List<Delivery> deliveries = new ArrayList<>();
 
     @OneToMany(mappedBy = "collectionCenter", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Waste> wastes = new ArrayList<>();
+    private List<DonationItem> donationItems = new ArrayList<>();
 }
