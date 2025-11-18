@@ -47,6 +47,7 @@ The backend will start on:
 
 ## 🛠️ Tech Stack
 
+* **React**
 * **Spring Boot (Java 17)**
 * **PostgreSQL**
 * **Spring Data JPA**
@@ -54,9 +55,4 @@ The backend will start on:
 * **Spring Web**
 * **Maven**
 
----
 
-## 👩‍💻 Author
-
-**Riya Mehta**
-University of Illinois Chicago
