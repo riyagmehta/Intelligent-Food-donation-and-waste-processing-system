@@ -1,34 +1,39 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import Layout from './components/Layout';
+import Layout from './components/layout/Layout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
-import { Box, Heading, Text, VStack } from '@chakra-ui/react';
+import DonorDashboard from './pages/donor/DonorDashboard';
+import MyDonations from './pages/donor/MyDonations';
+import NewDonation from './pages/donor/NewDonation';
+import AllDonations from './pages/admin/AllDonations';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Centers from './pages/Centers';
 
 function App() {
   const [user, setUser] = useState(null);
 
   const handleLogin = async (credentials) => {
-    // Mock login for now - we'll connect to API later
     console.log('Login with:', credentials);
-
-    // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
-        setUser({ username: credentials.username, role: 'ROLE_DONOR' });
+        // Determine role based on username for testing
+        let role = 'ROLE_DONOR';
+        if (credentials.username === 'admin') role = 'ROLE_ADMIN';
+        if (credentials.username === 'staff') role = 'ROLE_STAFF';
+
+        setUser({ username: credentials.username, role });
         resolve({ success: true });
       }, 1000);
     });
   };
 
   const handleSignup = async (userData) => {
-    // Mock signup for now - we'll connect to API later
     console.log('Signup with:', userData);
-
-    // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
-        setUser({ username: userData.username, role: userData.role });
+        // Signup always creates DONOR accounts
+        setUser({ username: userData.username, role: 'ROLE_DONOR' });
         resolve({ success: true });
       }, 1000);
     });
@@ -38,37 +43,109 @@ function App() {
     setUser(null);
   };
 
-  // Dashboard placeholder
-  const Dashboard = () => (
-    <Layout user={user} onLogout={handleLogout} showSidebar={true} role={user?.role}>
-      <VStack spacing={6} align="stretch">
-        <Heading>Welcome, {user?.username}!</Heading>
-        <Text fontSize="lg">Role: {user?.role}</Text>
-        <Box bg="white" p={6} borderRadius="lg" boxShadow="md">
-          <Text>Dashboard content will go here...</Text>
-        </Box>
-      </VStack>
-    </Layout>
-  );
+  // Protected Route wrapper
+  const ProtectedRoute = ({ children }) => {
+    if (!user) return <Navigate to="/login" />;
+    return (
+      <Layout user={user} onLogout={handleLogout} showSidebar={true} role={user?.role}>
+        {children}
+      </Layout>
+    );
+  };
+
+  // Role-based dashboard redirect
+  const getDashboardPath = (role) => {
+    if (role === 'ROLE_ADMIN' || role === 'ROLE_STAFF') {
+      return '/admin/dashboard';
+    }
+    return '/dashboard';
+  };
 
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
         <Route
           path="/login"
-          element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />}
+          element={
+            user ? (
+              <Navigate to={getDashboardPath(user.role)} />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          }
         />
         <Route
           path="/signup"
-          element={user ? <Navigate to="/dashboard" /> : <Signup onSignup={handleSignup} />}
+          element={
+            user ? (
+              <Navigate to={getDashboardPath(user.role)} />
+            ) : (
+              <Signup onSignup={handleSignup} />
+            )
+          }
         />
+
+        {/* Donor Routes */}
         <Route
           path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <DonorDashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
+          path="/donations"
+          element={
+            <ProtectedRoute>
+              <MyDonations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/donations/new"
+          element={
+            <ProtectedRoute>
+              <NewDonation />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin/Staff Routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/donations/all"
+          element={
+            <ProtectedRoute>
+              <AllDonations />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Shared Routes */}
+        <Route
+          path="/centers"
+          element={
+            <ProtectedRoute>
+              <Centers isAdmin={user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_STAFF'} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default Route */}
+        <Route
           path="/"
-          element={<Navigate to={user ? "/dashboard" : "/login"} />}
+          element={
+            <Navigate to={user ? getDashboardPath(user.role) : "/login"} />
+          }
         />
       </Routes>
     </Router>
