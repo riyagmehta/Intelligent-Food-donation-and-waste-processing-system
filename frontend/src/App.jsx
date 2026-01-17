@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -9,45 +9,24 @@ import NewDonation from './pages/donor/NewDonation';
 import AllDonations from './pages/admin/AllDonations';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Centers from './pages/Centers';
+import { Center, Spinner } from '@chakra-ui/react';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const { user, login, signup, logout, loading } = useAuth();
 
-  const handleLogin = async (credentials) => {
-    console.log('Login with:', credentials);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Determine role based on username for testing
-        let role = 'ROLE_DONOR';
-        if (credentials.username === 'admin') role = 'ROLE_ADMIN';
-        if (credentials.username === 'staff') role = 'ROLE_STAFF';
-
-        setUser({ username: credentials.username, role });
-        resolve({ success: true });
-      }, 1000);
-    });
-  };
-
-  const handleSignup = async (userData) => {
-    console.log('Signup with:', userData);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Signup always creates DONOR accounts
-        setUser({ username: userData.username, role: 'ROLE_DONOR' });
-        resolve({ success: true });
-      }, 1000);
-    });
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-  };
+  if (loading) {
+    return (
+      <Center h="100vh">
+        <Spinner size="xl" color="teal.500" />
+      </Center>
+    );
+  }
 
   // Protected Route wrapper
   const ProtectedRoute = ({ children }) => {
     if (!user) return <Navigate to="/login" />;
     return (
-      <Layout user={user} onLogout={handleLogout} showSidebar={true} role={user?.role}>
+      <Layout user={user} onLogout={logout} showSidebar={true} role={user?.role}>
         {children}
       </Layout>
     );
@@ -71,7 +50,7 @@ function App() {
             user ? (
               <Navigate to={getDashboardPath(user.role)} />
             ) : (
-              <Login onLogin={handleLogin} />
+              <Login onLogin={login} />
             )
           }
         />
@@ -81,7 +60,7 @@ function App() {
             user ? (
               <Navigate to={getDashboardPath(user.role)} />
             ) : (
-              <Signup onSignup={handleSignup} />
+              <Signup onSignup={signup} />
             )
           }
         />

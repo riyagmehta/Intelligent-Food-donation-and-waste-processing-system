@@ -22,10 +22,13 @@ import {
 } from '@chakra-ui/react';
 import { FiPlus, FiTrash2, FiArrowLeft } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { donationAPI, donorAPI, donationItemAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const NewDonation = () => {
     const navigate = useNavigate();
     const toast = useToast();
+    const { user } = useAuth();
     const cardBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
 
@@ -117,8 +120,38 @@ const NewDonation = () => {
             return;
         }
 
-        // Mock API call - will be replaced with real API
-        setTimeout(() => {
+        try {
+            // Step 1: Get or create donor
+            const donorsResponse = await donorAPI.getAll();
+            let donor = donorsResponse.data.find(d => d.user?.username === user.username);
+
+            if (!donor) {
+                // Create donor if doesn't exist
+                const donorData = {
+                    name: user.username,
+                    contact: 'N/A',
+                    location: 'N/A',
+                    user: {
+                        username: user.username,
+                    }
+                };
+                const createDonorResponse = await donorAPI.create(donorData);
+                donor = createDonorResponse.data;
+            }
+
+            // Step 2: Create donation
+            const donationData = {
+                name: formData.name,
+                status: 'PENDING',
+            };
+
+            const donationResponse = await donationAPI.create(donor.id, donationData);
+            const createdDonation = donationResponse.data;
+
+            // Step 3: Create donation items
+            // Note: You might need to add an endpoint to create items or include them in donation creation
+            // For now, we'll just create the donation
+
             toast({
                 title: 'Donation Created',
                 description: 'Your donation has been submitted successfully',
@@ -126,9 +159,20 @@ const NewDonation = () => {
                 duration: 3000,
                 isClosable: true,
             });
-            setLoading(false);
+
             navigate('/donations');
-        }, 1500);
+        } catch (error) {
+            console.error('Error creating donation:', error);
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to create donation',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -257,7 +301,8 @@ const NewDonation = () => {
                                                     }
                                                 >
                                                     <option value="FOOD">Food</option>
-                                                    <option value="BEVERAGE">Beverage</option>
+                                                    <option value="GROCERY">Grocery</option>
+                                                    <option value="HOUSEHOLD_SUPPLIES">Household</option>
                                                     <option value="OTHER">Other</option>
                                                 </Select>
                                             </FormControl>
