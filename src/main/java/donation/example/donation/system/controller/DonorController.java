@@ -8,6 +8,8 @@ import donation.example.donation.system.type.DonationType;
 import donation.example.donation.system.model.entity.Donor;
 import donation.example.donation.system.repository.DonorRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,9 +20,7 @@ import java.util.stream.Collectors;
 public class DonorController {
 
     private final DonorRepository donorRepository;
-
     private final UserRepository userRepository;
-
     private final DonorMapper donorMapper;
 
     public DonorController(DonorRepository donorRepository, UserRepository userRepository, DonorMapper donorMapper) {
@@ -52,13 +52,22 @@ public class DonorController {
         return null;
     }
 
-    // Create new donor
+    // Create new donor - FIXED VERSION
     @PostMapping
-    public DonorDTO createDonor(@RequestBody Donor donor) {
-        User user = userRepository.save(donor.getUser());
+    public ResponseEntity<DonorDTO> createDonor(@RequestBody Donor donor) {
+        // Get the currently authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        // Find the existing user
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Set the existing user (don't create a new one!)
         donor.setUser(user);
+
         Donor saved = donorRepository.save(donor);
-        return donorMapper.donorToDonorDTO(saved);
+        return ResponseEntity.ok(donorMapper.donorToDonorDTO(saved));
     }
 
     // Update donor

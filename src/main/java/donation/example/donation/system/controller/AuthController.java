@@ -46,7 +46,11 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(username, password)
             );
 
-            String token = jwtUtil.generateToken(username);
+            // Get user with roles
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String token = jwtUtil.generateToken(username, user.getRoles());
             return ResponseEntity.ok(Map.of("token", token));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(401).body("Invalid credentials");
@@ -86,8 +90,8 @@ public class AuthController {
 
         userRepository.save(user);
 
-        // Generate and return the token immediately for a better UX
-        String token = jwtUtil.generateToken(user.getUsername());
+        // Generate and return the token with roles
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRoles());
 
         return ResponseEntity.ok(Map.of(
                 "message", "User registered successfully!",
