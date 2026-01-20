@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -23,62 +24,73 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Spinner,
+    Center,
+    useToast,
 } from '@chakra-ui/react';
 import { FiPlus, FiSearch, FiMoreVertical, FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { donationAPI } from '../../services/api';
 
 const MyDonations = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const cardBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
 
+    const [donations, setDonations] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    // Mock data - will be replaced with API calls
-    const donations = [
-        {
-            id: 1,
-            name: 'Fresh Vegetables',
-            date: '2024-01-10',
-            status: 'PENDING',
-            center: 'Downtown Center',
-            items: 3,
-        },
-        {
-            id: 2,
-            name: 'Canned Foods',
-            date: '2024-01-08',
-            status: 'COLLECTED',
-            center: 'North Center',
-            items: 5,
-        },
-        {
-            id: 3,
-            name: 'Bread & Pastries',
-            date: '2024-01-05',
-            status: 'DELIVERED',
-            center: 'South Center',
-            items: 2,
-        },
-        {
-            id: 4,
-            name: 'Dairy Products',
-            date: '2024-01-03',
-            status: 'DELIVERED',
-            center: 'Downtown Center',
-            items: 4,
-        },
-        {
-            id: 5,
-            name: 'Rice & Grains',
-            date: '2024-01-01',
-            status: 'DELIVERED',
-            center: 'East Center',
-            items: 6,
-        },
-    ];
+    useEffect(() => {
+        fetchDonations();
+    }, []);
+
+    const fetchDonations = async () => {
+        try {
+            setLoading(true);
+            const response = await donationAPI.getAll();
+            console.log('Fetched donations:', response.data);
+            setDonations(response.data);
+        } catch (error) {
+            console.error('Error fetching donations:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load donations',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this donation?')) {
+            return;
+        }
+
+        try {
+            await donationAPI.delete(id);
+            toast({
+                title: 'Donation deleted',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+            fetchDonations(); // Refresh list
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to delete donation',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
 
     const getStatusColor = (status) => {
         const colors = {
@@ -90,11 +102,23 @@ const MyDonations = () => {
         return colors[status] || 'gray';
     };
 
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString();
+    };
+
     const filteredDonations = donations.filter((donation) => {
-        const matchesSearch = donation.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (donation.name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'ALL' || donation.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
+
+    if (loading) {
+        return (
+            <Center h="400px">
+                <Spinner size="xl" color="teal.500" />
+            </Center>
+        );
+    }
 
     return (
         <VStack spacing={6} align="stretch">
@@ -123,7 +147,6 @@ const MyDonations = () => {
                         <Box flex={{ base: '1 1 100%', md: '1 1 auto' }}>
                             <Input
                                 placeholder="Search donations..."
-                                leftIcon={<FiSearch />}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 size="md"
@@ -155,7 +178,6 @@ const MyDonations = () => {
                                 <Tr>
                                     <Th>Donation Name</Th>
                                     <Th>Date</Th>
-                                    <Th>Items</Th>
                                     <Th>Center</Th>
                                     <Th>Status</Th>
                                     <Th>Actions</Th>
@@ -165,10 +187,11 @@ const MyDonations = () => {
                                 {filteredDonations.length > 0 ? (
                                     filteredDonations.map((donation) => (
                                         <Tr key={donation.id}>
-                                            <Td fontWeight="medium">{donation.name}</Td>
-                                            <Td color="gray.600">{donation.date}</Td>
-                                            <Td color="gray.600">{donation.items} items</Td>
-                                            <Td color="gray.600">{donation.center}</Td>
+                                            <Td fontWeight="medium">
+                                                {donation.name || `Donation from ${donation.donor?.name || 'Unknown'}` || 'Unnamed Donation'}
+                                            </Td>
+                                            <Td color="gray.600">{formatDate(donation.donationDate)}</Td>
+                                            <Td color="gray.600">{donation.collectionCenter?.name || 'Not assigned'}</Td>
                                             <Td>
                                                 <Badge colorScheme={getStatusColor(donation.status)} fontSize="xs">
                                                     {donation.status}
@@ -197,8 +220,12 @@ const MyDonations = () => {
                                                                 >
                                                                     Edit
                                                                 </MenuItem>
-                                                                <MenuItem icon={<FiTrash2 />} color="red.500">
-                                                                    Cancel
+                                                                <MenuItem
+                                                                    icon={<FiTrash2 />}
+                                                                    color="red.500"
+                                                                    onClick={() => handleDelete(donation.id)}
+                                                                >
+                                                                    Delete
                                                                 </MenuItem>
                                                             </>
                                                         )}
@@ -209,7 +236,7 @@ const MyDonations = () => {
                                     ))
                                 ) : (
                                     <Tr>
-                                        <Td colSpan={6} textAlign="center" py={8}>
+                                        <Td colSpan={5} textAlign="center" py={8}>
                                             <Text color="gray.500">No donations found</Text>
                                         </Td>
                                     </Tr>

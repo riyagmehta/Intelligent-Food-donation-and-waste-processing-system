@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -6,7 +7,6 @@ import {
     VStack,
     HStack,
     Grid,
-    GridItem,
     Card,
     CardBody,
     Stat,
@@ -23,53 +23,64 @@ import {
     Icon,
     useColorModeValue,
     Flex,
+    Spinner,
+    Center,
 } from '@chakra-ui/react';
 import { FiPackage, FiClock, FiCheckCircle, FiTrendingUp, FiPlus } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { donationAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const DonorDashboard = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const cardBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-    // Mock data - will be replaced with API calls
-    const stats = {
-        totalDonations: 24,
-        pending: 5,
-        completed: 19,
-        thisMonth: 8,
-    };
+    const [donations, setDonations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalDonations: 0,
+        pending: 0,
+        completed: 0,
+        thisMonth: 0,
+    });
 
-    const recentDonations = [
-        {
-            id: 1,
-            name: 'Fresh Vegetables',
-            date: '2024-01-10',
-            status: 'PENDING',
-            center: 'Downtown Center',
-        },
-        {
-            id: 2,
-            name: 'Canned Foods',
-            date: '2024-01-08',
-            status: 'COLLECTED',
-            center: 'North Center',
-        },
-        {
-            id: 3,
-            name: 'Bread & Pastries',
-            date: '2024-01-05',
-            status: 'DELIVERED',
-            center: 'South Center',
-        },
-        {
-            id: 4,
-            name: 'Dairy Products',
-            date: '2024-01-03',
-            status: 'DELIVERED',
-            center: 'Downtown Center',
-        },
-    ];
+    useEffect(() => {
+        fetchDonations();
+    }, []);
+
+    const fetchDonations = async () => {
+        try {
+            setLoading(true);
+            const response = await donationAPI.getAll();
+            const allDonations = response.data;
+
+            console.log('Fetched donations:', allDonations); // Debug log
+
+            // Calculate stats
+            const now = new Date();
+            const thisMonth = allDonations.filter(d => {
+                const donationDate = new Date(d.donationDate);
+                return donationDate.getMonth() === now.getMonth() &&
+                    donationDate.getFullYear() === now.getFullYear();
+            }).length;
+
+            setStats({
+                totalDonations: allDonations.length,
+                pending: allDonations.filter(d => d.status === 'PENDING').length,
+                completed: allDonations.filter(d => d.status === 'DELIVERED').length,
+                thisMonth: thisMonth,
+            });
+
+            // Get recent 4 donations
+            setDonations(allDonations.slice(0, 4));
+        } catch (error) {
+            console.error('Error fetching donations:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getStatusColor = (status) => {
         const colors = {
@@ -79,6 +90,10 @@ const DonorDashboard = () => {
             CANCELLED: 'red',
         };
         return colors[status] || 'gray';
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString();
     };
 
     const StatCard = ({ icon, label, value, helpText, color }) => (
@@ -102,13 +117,21 @@ const DonorDashboard = () => {
         </Card>
     );
 
+    if (loading) {
+        return (
+            <Center h="400px">
+                <Spinner size="xl" color="teal.500" />
+            </Center>
+        );
+    }
+
     return (
         <VStack spacing={6} align="stretch">
             {/* Header */}
             <Flex justify="space-between" align="center" flexWrap="wrap" gap={4}>
                 <Box>
                     <Heading size="lg" mb={1}>
-                        Welcome back! 👋
+                        Welcome back, {user?.username}! 👋
                     </Heading>
                     <Text color="gray.600">Here's what's happening with your donations</Text>
                 </Box>
@@ -149,7 +172,7 @@ const DonorDashboard = () => {
                     icon={FiTrendingUp}
                     label="This Month"
                     value={stats.thisMonth}
-                    helpText="January 2024"
+                    helpText={new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     color="blue"
                 />
             </Grid>
@@ -168,43 +191,55 @@ const DonorDashboard = () => {
                         </Button>
                     </Flex>
 
-                    <Box overflowX="auto">
-                        <Table variant="simple">
-                            <Thead>
-                                <Tr>
-                                    <Th>Donation Name</Th>
-                                    <Th>Date</Th>
-                                    <Th>Center</Th>
-                                    <Th>Status</Th>
-                                    <Th>Actions</Th>
-                                </Tr>
-                            </Thead>
-                            <Tbody>
-                                {recentDonations.map((donation) => (
-                                    <Tr key={donation.id}>
-                                        <Td fontWeight="medium">{donation.name}</Td>
-                                        <Td color="gray.600">{donation.date}</Td>
-                                        <Td color="gray.600">{donation.center}</Td>
-                                        <Td>
-                                            <Badge colorScheme={getStatusColor(donation.status)} fontSize="xs">
-                                                {donation.status}
-                                            </Badge>
-                                        </Td>
-                                        <Td>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                colorScheme="teal"
-                                                onClick={() => navigate(`/donations/${donation.id}`)}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </Td>
+                    {donations.length > 0 ? (
+                        <Box overflowX="auto">
+                            <Table variant="simple">
+                                <Thead>
+                                    <Tr>
+                                        <Th>Donation Name</Th>
+                                        <Th>Date</Th>
+                                        <Th>Center</Th>
+                                        <Th>Status</Th>
+                                        <Th>Actions</Th>
                                     </Tr>
-                                ))}
-                            </Tbody>
-                        </Table>
-                    </Box>
+                                </Thead>
+                                <Tbody>
+                                    {donations.map((donation) => (
+                                        <Tr key={donation.id}>
+                                            <Td fontWeight="medium">{donation.name || 'Unnamed Donation'}</Td>
+                                            <Td color="gray.600">{formatDate(donation.donationDate)}</Td>
+                                            <Td color="gray.600">{donation.collectionCenter?.name || 'Not assigned'}</Td>
+                                            <Td>
+                                                <Badge colorScheme={getStatusColor(donation.status)} fontSize="xs">
+                                                    {donation.status}
+                                                </Badge>
+                                            </Td>
+                                            <Td>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    colorScheme="teal"
+                                                    onClick={() => navigate(`/donations/${donation.id}`)}
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </Td>
+                                        </Tr>
+                                    ))}
+                                </Tbody>
+                            </Table>
+                        </Box>
+                    ) : (
+                        <Box textAlign="center" py={8}>
+                            <Text color="gray.500" mb={4}>No donations yet</Text>
+                            <Button
+                                colorScheme="teal"
+                                onClick={() => navigate('/donations/new')}
+                            >
+                                Create Your First Donation
+                            </Button>
+                        </Box>
+                    )}
                 </CardBody>
             </Card>
 
