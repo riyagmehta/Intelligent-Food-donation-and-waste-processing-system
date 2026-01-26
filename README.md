@@ -1,58 +1,108 @@
-# 🥗 Intelligent Food Donation and Waste Processing System
+# Intelligent Food Donation and Waste Processing System
 
-A fullstack application built with **Spring Boot** and **React** to manage food donations, collection centers, deliveries, and donationItem processing efficiently.
-It connects **donors**, **collection centers**, and **logistics teams** to minimize food donationItem and ensure proper resource utilization.
+A full-stack web application designed to streamline food donation management by connecting donors, collection centers, and staff. The system helps minimize food waste through efficient tracking, real-time status updates, and intelligent resource allocation.
 
----
+## Overview
 
-## ⚙️ Setup Instructions
+This platform enables:
+- Donors to create and track food donation requests
+- Collection centers to manage incoming donations and inventory
+- Staff to process donations and coordinate deliveries
+- Administrators to monitor system-wide operations and analytics
+- AI-powered features for smart descriptions, food handling tips, and personalized thank you messages
 
-### 1️⃣ Clone the Repository
+## Technology Stack
 
+### Backend
+- Spring Boot 3.x
+- Java 17
+- PostgreSQL
+- Spring Security (JWT Authentication)
+- Spring Data JPA
+- Google Gemini AI API
+- Maven
+
+### Frontend
+- React 18
+- Chakra UI
+- React Router
+- Axios
+- Vite
+
+## Prerequisites
+
+- Java JDK 17 or higher
+- Maven 3.6+
+- Node.js 16+
+- PostgreSQL 12+
+
+## Setup & Installation
+
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/riyagmehta/Intelligent-Food-donation-and-donationItem-processing-system.git
-cd Intelligent-Food-donation-and-donationItem-processing-system
+git clone https://github.com/riyagmehta/Intelligent-Food-donation-and-waste-processing-system.git
+cd Intelligent-Food-donation-and-waste-processing-system
 ```
 
-### 2️⃣ Configure PostgreSQL
+### 2. Database Configuration
 
-Open `src/main/resources/application.properties` and set your PostgreSQL credentials:
-
+Create a PostgreSQL database:
+```bash
+createdb donationdb
 ```
+
+Update `src/main/resources/application.properties`:
+```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/donationdb
-spring.datasource.username=postgres
-spring.datasource.password=yourpassword
+spring.datasource.username=your_username
+spring.datasource.password=your_password
 spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+
+# Google Gemini AI API Configuration
+gemini.api.key=your_gemini_api_key_here
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 ```
 
-### 3️⃣ Install Dependencies
+> Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
+### 3. Install Dependencies
+
+**Backend:**
 ```bash
 mvn clean install
 ```
 
-### 4️⃣ Run the Application
+**Frontend:**
+```bash
+cd frontend
+npm install
+```
 
+## Running the Application
+
+### Start Backend Server
 ```bash
 mvn spring-boot:run
 ```
 
-The backend will start on:
-👉 `http://localhost:8080`
+Backend runs on `http://localhost:8080`
 
----
+### Start Frontend Development Server
+```bash
+cd frontend
+npm run dev
+```
 
+Frontend runs on `http://localhost:3000`
 
+## Live Demo
 
-## 🛠️ Tech Stack
+**Deployment Link:** Coming soon
 
-* **React**
-* **Spring Boot (Java 17)**
-* **PostgreSQL**
-* **Spring Data JPA**
-* **Lombok**
-* **Spring Web**
-* **Maven**
+## License
 
+This project is licensed under the MIT License.
 
+## Repository
+
+https://github.com/riyagmehta/Intelligent-Food-donation-and-waste-processing-system
