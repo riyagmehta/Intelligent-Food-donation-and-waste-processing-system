@@ -124,4 +124,17 @@ export const recipientAPI = {
   delete: (id) => api.delete(`/recipients/${id}`),
 };
 
+// AI API - Gemini powered features
+export const aiAPI = {
+  // Generate smart donation description based on items
+  generateDescription: (items) => api.post('/ai/generate-description', { items }),
+
+  // Get food handling and storage tips
+  getFoodTips: (items) => api.post('/ai/food-tips', { items }),
+
+  // Generate personalized thank you message
+  generateThankYou: (donorName, items, date) =>
+    api.post('/ai/thank-you', { donorName, items, date }),
+};
+
 export default api;

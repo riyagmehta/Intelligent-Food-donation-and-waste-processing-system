@@ -102,6 +102,9 @@ public class SecurityConfig {
                         // Recipients - staff manages recipients
                         .requestMatchers("/api/recipients/**").hasAnyRole("STAFF", "ADMIN")
 
+                        // AI endpoints - all authenticated users can access
+                        .requestMatchers("/api/ai/**").hasAnyRole("DONOR", "STAFF", "ADMIN", "DRIVER")
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 )

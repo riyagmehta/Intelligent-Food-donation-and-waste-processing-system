@@ -27,10 +27,11 @@ import {
     Badge,
     Flex,
     Progress,
+    Tooltip,
 } from '@chakra-ui/react';
-import { FiPlus, FiTrash2, FiArrowLeft, FiPackage, FiMapPin, FiCheckCircle, FiInfo, FiSend } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiArrowLeft, FiPackage, FiMapPin, FiInfo, FiSend, FiZap, FiCpu } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { donationAPI, centerAPI, donationItemAPI } from '../../services/api';
+import { donationAPI, centerAPI, donationItemAPI, aiAPI } from '../../services/api';
 
 const NewDonation = () => {
     const navigate = useNavigate();
@@ -46,9 +47,14 @@ const NewDonation = () => {
         'linear(to-br, brand.400, teal.400, blue.400)',
         'linear(to-br, brand.500, teal.500, blue.500)'
     );
+    const aiGradient = useColorModeValue(
+        'linear(to-r, purple.400, pink.400)',
+        'linear(to-r, purple.500, pink.500)'
+    );
 
     const [loading, setLoading] = useState(false);
     const [centersLoading, setCentersLoading] = useState(true);
+    const [aiLoading, setAiLoading] = useState(false);
     const [centers, setCenters] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
@@ -125,6 +131,86 @@ const NewDonation = () => {
                 duration: 2000,
             });
         }
+    };
+
+    // AI: Generate smart description based on items
+    const generateAiDescription = async () => {
+        const validItems = items.filter(item => item.name.trim());
+        if (validItems.length === 0) {
+            toast({
+                title: 'No items added',
+                description: 'Please add at least one item name to generate a description',
+                status: 'warning',
+                duration: 3000,
+            });
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const itemNames = validItems.map(item => {
+                const qty = item.quantity ? `${item.quantity} ${item.unit}` : '';
+                return qty ? `${item.name} (${qty})` : item.name;
+            });
+
+            const response = await aiAPI.generateDescription(itemNames);
+
+            if (response.data.success) {
+                setFormData({
+                    ...formData,
+                    description: response.data.content,
+                });
+                toast({
+                    title: 'Description Generated',
+                    description: 'AI has created a description for your donation',
+                    status: 'success',
+                    duration: 2000,
+                });
+            } else {
+                throw new Error(response.data.error);
+            }
+        } catch (error) {
+            console.error('Error generating description:', error);
+            toast({
+                title: 'AI Error',
+                description: 'Failed to generate description. Please try again.',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    // AI: Generate smart donation name based on items
+    const generateAiName = async () => {
+        const validItems = items.filter(item => item.name.trim());
+        if (validItems.length === 0) {
+            toast({
+                title: 'No items added',
+                description: 'Please add at least one item to generate a name',
+                status: 'warning',
+                duration: 3000,
+            });
+            return;
+        }
+
+        // Generate a simple name based on items
+        const itemNames = validItems.map(item => item.name);
+        if (itemNames.length === 1) {
+            setFormData({ ...formData, name: itemNames[0] + ' Donation' });
+        } else if (itemNames.length === 2) {
+            setFormData({ ...formData, name: itemNames.join(' & ') + ' Donation' });
+        } else {
+            setFormData({ ...formData, name: `${itemNames[0]} & ${itemNames.length - 1} more items` });
+        }
+
+        toast({
+            title: 'Name Generated',
+            description: 'Donation name has been set based on your items',
+            status: 'success',
+            duration: 2000,
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -285,80 +371,7 @@ const NewDonation = () => {
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* Basic Information */}
-                <Card
-                    bg={cardBg}
-                    border="1px"
-                    borderColor={borderColor}
-                    borderRadius="2xl"
-                    boxShadow={useColorModeValue('lg', 'dark-lg')}
-                    mb={6}
-                    overflow="hidden"
-                >
-                    <CardBody p={0}>
-                        <Flex p={6} pb={4} align="center" gap={3}>
-                            <Box
-                                bgGradient={gradientBg}
-                                p={3}
-                                borderRadius="xl"
-                            >
-                                <Icon as={FiPackage} color="white" boxSize={5} />
-                            </Box>
-                            <Heading size="md" color={headingColor}>Basic Information</Heading>
-                        </Flex>
-                        <Divider borderColor={borderColor} />
-                        <VStack spacing={5} align="stretch" p={6}>
-                            <FormControl isRequired>
-                                <FormLabel fontWeight="600" color={headingColor}>Donation Name</FormLabel>
-                                <Input
-                                    name="name"
-                                    placeholder="e.g., Fresh Vegetables, Canned Foods"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    size="lg"
-                                    borderRadius="xl"
-                                    _focus={{ borderColor: 'brand.400', boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)' }}
-                                />
-                            </FormControl>
-
-                            <FormControl isRequired>
-                                <FormLabel fontWeight="600" color={headingColor}>Collection Center</FormLabel>
-                                <Select
-                                    name="collectionCenterId"
-                                    placeholder="Select a collection center"
-                                    value={formData.collectionCenterId}
-                                    onChange={handleChange}
-                                    size="lg"
-                                    borderRadius="xl"
-                                    icon={<FiMapPin />}
-                                >
-                                    {centers.map((center) => (
-                                        <option key={center.id} value={center.id}>
-                                            {center.name} - {center.location}
-                                        </option>
-                                    ))}
-                                </Select>
-                                <Text fontSize="sm" color={textColor} mt={2}>
-                                    Your donation will be sent to this center for approval
-                                </Text>
-                            </FormControl>
-
-                            <FormControl>
-                                <FormLabel fontWeight="600" color={headingColor}>Description (Optional)</FormLabel>
-                                <Textarea
-                                    name="description"
-                                    placeholder="Add any additional details about this donation..."
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    borderRadius="xl"
-                                />
-                            </FormControl>
-                        </VStack>
-                    </CardBody>
-                </Card>
-
-                {/* Donation Items */}
+                {/* Donation Items - Move to top so AI can use them */}
                 <Card
                     bg={cardBg}
                     border="1px"
@@ -496,6 +509,128 @@ const NewDonation = () => {
                                     </Box>
                                 </Box>
                             ))}
+                        </VStack>
+                    </CardBody>
+                </Card>
+
+                {/* Basic Information with AI Features */}
+                <Card
+                    bg={cardBg}
+                    border="1px"
+                    borderColor={borderColor}
+                    borderRadius="2xl"
+                    boxShadow={useColorModeValue('lg', 'dark-lg')}
+                    mb={6}
+                    overflow="hidden"
+                >
+                    <CardBody p={0}>
+                        <Flex p={6} pb={4} align="center" justify="space-between">
+                            <HStack spacing={3}>
+                                <Box
+                                    bgGradient={gradientBg}
+                                    p={3}
+                                    borderRadius="xl"
+                                >
+                                    <Icon as={FiPackage} color="white" boxSize={5} />
+                                </Box>
+                                <Heading size="md" color={headingColor}>Basic Information</Heading>
+                            </HStack>
+                            {/* AI Badge */}
+                            <Badge
+                                bgGradient={aiGradient}
+                                color="white"
+                                px={3}
+                                py={1}
+                                borderRadius="full"
+                                fontSize="xs"
+                            >
+                                <HStack spacing={1}>
+                                    <Icon as={FiCpu} boxSize={3} />
+                                    <Text>AI Powered</Text>
+                                </HStack>
+                            </Badge>
+                        </Flex>
+                        <Divider borderColor={borderColor} />
+                        <VStack spacing={5} align="stretch" p={6}>
+                            <FormControl isRequired>
+                                <Flex justify="space-between" align="center" mb={2}>
+                                    <FormLabel fontWeight="600" color={headingColor} mb={0}>Donation Name</FormLabel>
+                                    <Tooltip label="Generate name from items" hasArrow>
+                                        <Button
+                                            size="xs"
+                                            variant="ghost"
+                                            colorScheme="purple"
+                                            leftIcon={<FiZap />}
+                                            onClick={generateAiName}
+                                            isDisabled={items.every(item => !item.name.trim())}
+                                        >
+                                            Auto Generate
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Input
+                                    name="name"
+                                    placeholder="e.g., Fresh Vegetables, Canned Foods"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    size="lg"
+                                    borderRadius="xl"
+                                    _focus={{ borderColor: 'brand.400', boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)' }}
+                                />
+                            </FormControl>
+
+                            <FormControl isRequired>
+                                <FormLabel fontWeight="600" color={headingColor}>Collection Center</FormLabel>
+                                <Select
+                                    name="collectionCenterId"
+                                    placeholder="Select a collection center"
+                                    value={formData.collectionCenterId}
+                                    onChange={handleChange}
+                                    size="lg"
+                                    borderRadius="xl"
+                                    icon={<FiMapPin />}
+                                >
+                                    {centers.map((center) => (
+                                        <option key={center.id} value={center.id}>
+                                            {center.name} - {center.location}
+                                        </option>
+                                    ))}
+                                </Select>
+                                <Text fontSize="sm" color={textColor} mt={2}>
+                                    Your donation will be sent to this center for approval
+                                </Text>
+                            </FormControl>
+
+                            <FormControl>
+                                <Flex justify="space-between" align="center" mb={2}>
+                                    <FormLabel fontWeight="600" color={headingColor} mb={0}>Description (Optional)</FormLabel>
+                                    <Tooltip label="Generate AI description based on items" hasArrow>
+                                        <Button
+                                            size="xs"
+                                            bgGradient={aiGradient}
+                                            color="white"
+                                            leftIcon={<FiZap />}
+                                            onClick={generateAiDescription}
+                                            isLoading={aiLoading}
+                                            loadingText="Generating..."
+                                            isDisabled={items.every(item => !item.name.trim())}
+                                            _hover={{
+                                                bgGradient: 'linear(to-r, purple.500, pink.500)',
+                                            }}
+                                        >
+                                            AI Generate
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Textarea
+                                    name="description"
+                                    placeholder="Add any additional details about this donation... or click 'AI Generate' to create one automatically"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    borderRadius="xl"
+                                />
+                            </FormControl>
                         </VStack>
                     </CardBody>
                 </Card>
