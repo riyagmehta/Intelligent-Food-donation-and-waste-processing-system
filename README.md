@@ -99,10 +99,5 @@ Frontend runs on `http://localhost:3000`
 
 **Deployment Link:** Coming soon
 
-## License
 
-This project is licensed under the MIT License.
 
-## Repository
-
-https://github.com/riyagmehta/Intelligent-Food-donation-and-waste-processing-system
