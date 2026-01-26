@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -30,29 +31,43 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Spinner,
+    Center,
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogOverlay,
 } from '@chakra-ui/react';
 import {
     FiMapPin,
-    FiSearch,
     FiPlus,
     FiPackage,
     FiEdit,
     FiTrash2,
     FiMoreVertical,
 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useRef } from 'react';
+import { centerAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const Centers = ({ isAdmin = false }) => {
+const Centers = () => {
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_STAFF';
+
     const cardBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
     const toast = useToast();
-    const { isOpen, onOpen, onClose } = useDisclosure();
-    const {
-        isOpen: isEditOpen,
-        onOpen: onEditOpen,
-        onClose: onEditClose,
-    } = useDisclosure();
+    const cancelRef = useRef();
 
+    const { isOpen, onOpen, onClose } = useDisclosure();
+    const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+    const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+
+    const [centers, setCenters] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCenter, setSelectedCenter] = useState(null);
     const [formData, setFormData] = useState({
@@ -61,49 +76,31 @@ const Centers = ({ isAdmin = false }) => {
         maxCapacity: '',
     });
 
-    // Mock data
-    const centers = [
-        {
-            id: 1,
-            name: 'Downtown Center',
-            location: '123 Main St, Downtown',
-            maxCapacity: 500,
-            currentLoad: 450,
-            donations: 32,
-            status: 'active',
-        },
-        {
-            id: 2,
-            name: 'North Center',
-            location: '456 North Ave, Northside',
-            maxCapacity: 500,
-            currentLoad: 300,
-            donations: 21,
-            status: 'active',
-        },
-        {
-            id: 3,
-            name: 'South Center',
-            location: '789 South Blvd, Southside',
-            maxCapacity: 500,
-            currentLoad: 420,
-            donations: 28,
-            status: 'active',
-        },
-        {
-            id: 4,
-            name: 'East Center',
-            location: '321 East St, Eastside',
-            maxCapacity: 300,
-            currentLoad: 150,
-            donations: 15,
-            status: 'active',
-        },
-    ];
+    useEffect(() => {
+        fetchCenters();
+    }, []);
+
+    const fetchCenters = async () => {
+        try {
+            setLoading(true);
+            const response = await centerAPI.getAll();
+            setCenters(response.data);
+        } catch (error) {
+            console.error('Error fetching centers:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load collection centers',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredCenters = centers.filter((center) =>
-        center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        center.location.toLowerCase().includes(searchTerm.toLowerCase())
+        (center.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (center.location || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getCapacityColor = (percentage) => {
@@ -113,7 +110,8 @@ const Centers = ({ isAdmin = false }) => {
     };
 
     const getCapacityPercentage = (center) => {
-        return Math.round((center.currentLoad / center.maxCapacity) * 100);
+        if (!center.maxCapacity) return 0;
+        return Math.round(((center.currentLoad || 0) / center.maxCapacity) * 100);
     };
 
     const handleCreateCenter = () => {
@@ -126,52 +124,122 @@ const Centers = ({ isAdmin = false }) => {
         setFormData({
             name: center.name,
             location: center.location,
-            maxCapacity: center.maxCapacity.toString(),
+            maxCapacity: center.maxCapacity?.toString() || '',
         });
         onEditOpen();
     };
 
-    const handleSubmit = () => {
+    const handleDeleteClick = (center) => {
+        setSelectedCenter(center);
+        onDeleteOpen();
+    };
+
+    const handleSubmit = async () => {
         if (!formData.name || !formData.location || !formData.maxCapacity) {
             toast({
                 title: 'Please fill all fields',
                 status: 'warning',
                 duration: 2000,
-                isClosable: true,
             });
             return;
         }
 
-        toast({
-            title: 'Center Created',
-            description: `${formData.name} has been created successfully`,
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-        });
-        onClose();
+        setActionLoading(true);
+        try {
+            await centerAPI.create({
+                name: formData.name,
+                location: formData.location,
+                maxCapacity: parseInt(formData.maxCapacity),
+                currentLoad: 0,
+            });
+            toast({
+                title: 'Center Created',
+                description: `${formData.name} has been created successfully`,
+                status: 'success',
+                duration: 3000,
+            });
+            onClose();
+            await fetchCenters();
+        } catch (error) {
+            console.error('Error creating center:', error);
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to create center',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setActionLoading(false);
+        }
     };
 
-    const handleUpdate = () => {
-        toast({
-            title: 'Center Updated',
-            description: `${formData.name} has been updated successfully`,
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-        });
-        onEditClose();
+    const handleUpdate = async () => {
+        if (!formData.name || !formData.location || !formData.maxCapacity) {
+            toast({
+                title: 'Please fill all fields',
+                status: 'warning',
+                duration: 2000,
+            });
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            await centerAPI.update(selectedCenter.id, {
+                name: formData.name,
+                location: formData.location,
+                maxCapacity: parseInt(formData.maxCapacity),
+            });
+            toast({
+                title: 'Center Updated',
+                description: `${formData.name} has been updated successfully`,
+                status: 'success',
+                duration: 3000,
+            });
+            onEditClose();
+            await fetchCenters();
+        } catch (error) {
+            console.error('Error updating center:', error);
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to update center',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setActionLoading(false);
+        }
     };
 
-    const handleDelete = (centerId) => {
-        toast({
-            title: 'Center Deleted',
-            description: 'The collection center has been removed',
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-        });
+    const handleDelete = async () => {
+        setActionLoading(true);
+        try {
+            await centerAPI.delete(selectedCenter.id);
+            toast({
+                title: 'Center Deleted',
+                description: 'The collection center has been removed',
+                status: 'success',
+                duration: 3000,
+            });
+            onDeleteClose();
+            await fetchCenters();
+        } catch (error) {
+            console.error('Error deleting center:', error);
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to delete center',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setActionLoading(false);
+        }
     };
+
+    const totalCapacity = centers.reduce((sum, c) => sum + (c.maxCapacity || 0), 0);
+    const avgUtilization = centers.length > 0
+        ? Math.round(centers.reduce((sum, c) => sum + getCapacityPercentage(c), 0) / centers.length)
+        : 0;
 
     const CenterCard = ({ center }) => {
         const percentage = getCapacityPercentage(center);
@@ -215,7 +283,7 @@ const Centers = ({ isAdmin = false }) => {
                                     <MenuItem
                                         icon={<FiTrash2 />}
                                         color="red.500"
-                                        onClick={() => handleDelete(center.id)}
+                                        onClick={() => handleDeleteClick(center)}
                                     >
                                         Delete
                                     </MenuItem>
@@ -233,7 +301,7 @@ const Centers = ({ isAdmin = false }) => {
                                 </Text>
                                 <HStack spacing={2}>
                                     <Text fontSize="sm" color="gray.600">
-                                        {center.currentLoad}/{center.maxCapacity} units
+                                        {center.currentLoad || 0}/{center.maxCapacity || 0} units
                                     </Text>
                                     <Badge colorScheme={getCapacityColor(percentage)} fontSize="xs">
                                         {percentage}%
@@ -253,11 +321,11 @@ const Centers = ({ isAdmin = false }) => {
                             <HStack spacing={2}>
                                 <Icon as={FiPackage} color="gray.500" boxSize={4} />
                                 <Text fontSize="sm" color="gray.600">
-                                    {center.donations} donations
+                                    {center.user?.username || 'No staff assigned'}
                                 </Text>
                             </HStack>
                             <Badge colorScheme="green" fontSize="xs">
-                                {center.status}
+                                Active
                             </Badge>
                         </Flex>
                     </VStack>
@@ -265,6 +333,14 @@ const Centers = ({ isAdmin = false }) => {
             </Card>
         );
     };
+
+    if (loading) {
+        return (
+            <Center h="400px">
+                <Spinner size="xl" color="teal.500" />
+            </Center>
+        );
+    }
 
     return (
         <VStack spacing={6} align="stretch">
@@ -295,7 +371,6 @@ const Centers = ({ isAdmin = false }) => {
                 <CardBody>
                     <Input
                         placeholder="Search centers by name or location..."
-                        leftIcon={<FiSearch />}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         size="md"
@@ -321,7 +396,7 @@ const Centers = ({ isAdmin = false }) => {
                             Total Capacity
                         </Text>
                         <Text fontSize="2xl" fontWeight="bold">
-                            {centers.reduce((sum, c) => sum + c.maxCapacity, 0)} units
+                            {totalCapacity} units
                         </Text>
                     </CardBody>
                 </Card>
@@ -331,26 +406,27 @@ const Centers = ({ isAdmin = false }) => {
                             Average Utilization
                         </Text>
                         <Text fontSize="2xl" fontWeight="bold">
-                            {Math.round(
-                                centers.reduce((sum, c) => sum + getCapacityPercentage(c), 0) /
-                                centers.length
-                            )}
-                            %
+                            {avgUtilization}%
                         </Text>
                     </CardBody>
                 </Card>
             </Grid>
 
             {/* Centers Grid */}
-            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(2, 1fr)' }} gap={6}>
-                {filteredCenters.map((center) => (
-                    <CenterCard key={center.id} center={center} />
-                ))}
-            </Grid>
-
-            {filteredCenters.length === 0 && (
+            {filteredCenters.length > 0 ? (
+                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                    {filteredCenters.map((center) => (
+                        <CenterCard key={center.id} center={center} />
+                    ))}
+                </Grid>
+            ) : (
                 <Box textAlign="center" py={8}>
                     <Text color="gray.500">No centers found</Text>
+                    {isAdmin && (
+                        <Button mt={4} colorScheme="teal" onClick={handleCreateCenter}>
+                            Add Your First Center
+                        </Button>
+                    )}
                 </Box>
             )}
 
@@ -393,7 +469,7 @@ const Centers = ({ isAdmin = false }) => {
                         <Button variant="ghost" mr={3} onClick={onClose}>
                             Cancel
                         </Button>
-                        <Button colorScheme="teal" onClick={handleSubmit}>
+                        <Button colorScheme="teal" onClick={handleSubmit} isLoading={actionLoading}>
                             Create Center
                         </Button>
                     </ModalFooter>
@@ -436,12 +512,40 @@ const Centers = ({ isAdmin = false }) => {
                         <Button variant="ghost" mr={3} onClick={onEditClose}>
                             Cancel
                         </Button>
-                        <Button colorScheme="teal" onClick={handleUpdate}>
+                        <Button colorScheme="teal" onClick={handleUpdate} isLoading={actionLoading}>
                             Update Center
                         </Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                isOpen={isDeleteOpen}
+                leastDestructiveRef={cancelRef}
+                onClose={onDeleteClose}
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            Delete Center
+                        </AlertDialogHeader>
+
+                        <AlertDialogBody>
+                            Are you sure you want to delete "{selectedCenter?.name}"? This action cannot be undone.
+                        </AlertDialogBody>
+
+                        <AlertDialogFooter>
+                            <Button ref={cancelRef} onClick={onDeleteClose}>
+                                Cancel
+                            </Button>
+                            <Button colorScheme="red" onClick={handleDelete} ml={3} isLoading={actionLoading}>
+                                Delete
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
         </VStack>
     );
 };

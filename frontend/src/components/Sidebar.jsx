@@ -5,7 +5,6 @@ import {
     Text,
     Icon,
     useColorModeValue,
-    Flex,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import {
@@ -14,8 +13,9 @@ import {
     FiPackage,
     FiUsers,
     FiMapPin,
-    FiBarChart,
-    FiSettings,
+    FiUser,
+    FiCheckCircle,
+    FiTruck,
 } from 'react-icons/fi';
 
 const Sidebar = ({ role = 'DONOR' }) => {
@@ -33,31 +33,36 @@ const Sidebar = ({ role = 'DONOR' }) => {
             { name: 'My Donations', icon: FiPackage, path: '/donations' },
             { name: 'New Donation', icon: FiGrid, path: '/donations/new' },
             { name: 'Centers', icon: FiMapPin, path: '/centers' },
-            { name: 'Profile', icon: FiSettings, path: '/profile' },
+            { name: 'Profile', icon: FiUser, path: '/profile' },
         ],
         ROLE_STAFF: [
-            { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
+            { name: 'Dashboard', icon: FiHome, path: '/staff/dashboard' },
+            { name: 'Pending Donations', icon: FiCheckCircle, path: '/staff/dashboard' },
             { name: 'All Donations', icon: FiPackage, path: '/donations/all' },
-            { name: 'Donors', icon: FiUsers, path: '/donors' },
-            { name: 'Centers', icon: FiMapPin, path: '/centers' },
-            { name: 'Items', icon: FiGrid, path: '/items' },
-            { name: 'Analytics', icon: FiBarChart, path: '/analytics' },
+            { name: 'My Center', icon: FiMapPin, path: '/centers' },
+            { name: 'Deliveries', icon: FiTruck, path: '/staff/deliveries' },
+            { name: 'Recipients', icon: FiUsers, path: '/staff/recipients' },
+            { name: 'Profile', icon: FiUser, path: '/profile' },
+        ],
+        ROLE_DRIVER: [
+            { name: 'Dashboard', icon: FiHome, path: '/driver/dashboard' },
+            { name: 'My Deliveries', icon: FiTruck, path: '/driver/deliveries' },
+            { name: 'Profile', icon: FiUser, path: '/profile' },
         ],
         ROLE_ADMIN: [
-            { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
+            { name: 'Dashboard', icon: FiHome, path: '/admin/dashboard' },
             { name: 'All Donations', icon: FiPackage, path: '/donations/all' },
             { name: 'Donors', icon: FiUsers, path: '/donors' },
             { name: 'Centers', icon: FiMapPin, path: '/centers' },
-            { name: 'Items', icon: FiGrid, path: '/items' },
-            { name: 'Analytics', icon: FiBarChart, path: '/analytics' },
-            { name: 'Settings', icon: FiSettings, path: '/settings' },
+            { name: 'Profile', icon: FiUser, path: '/profile' },
         ],
     };
 
     const items = menuItems[role] || menuItems.ROLE_DONOR;
 
     const SidebarLink = ({ item }) => {
-        const isActive = location.pathname === item.path;
+        const isActive = location.pathname === item.path ||
+            (item.path !== '/' && location.pathname.startsWith(item.path));
 
         return (
             <Box

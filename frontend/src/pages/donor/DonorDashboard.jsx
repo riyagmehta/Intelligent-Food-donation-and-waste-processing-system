@@ -53,10 +53,9 @@ const DonorDashboard = () => {
     const fetchDonations = async () => {
         try {
             setLoading(true);
-            const response = await donationAPI.getAll();
+            // Use getMyDonations to only fetch current user's donations
+            const response = await donationAPI.getMyDonations();
             const allDonations = response.data;
-
-            console.log('Fetched donations:', allDonations); // Debug log
 
             // Calculate stats
             const now = new Date();
@@ -85,9 +84,10 @@ const DonorDashboard = () => {
     const getStatusColor = (status) => {
         const colors = {
             PENDING: 'yellow',
+            REJECTED: 'red',
             COLLECTED: 'blue',
             DELIVERED: 'green',
-            CANCELLED: 'red',
+            PROCESSED: 'purple',
         };
         return colors[status] || 'gray';
     };

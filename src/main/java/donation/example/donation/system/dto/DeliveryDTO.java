@@ -12,13 +12,30 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DeliveryDTO {
     private Long id;
+
+    // Donation info
     private Long donationId;
-    private String donationItemName;
+    private String donationName;
+
+    // From Center info
     private Long fromCenterId;
     private String fromCenterName;
-    private String destinationAddress;
+
+    // Driver info
+    private Long driverId;
     private String driverName;
+    private String driverPhone;
+
+    // Recipient info
+    private Long recipientId;
+    private String recipientName;
+    private String recipientAddress;
+
     private DeliveryStatus status;
-    private LocalDateTime pickupTime;
-    private LocalDateTime deliveryTime;
+    private String notes;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime scheduledPickupTime;
+    private LocalDateTime actualPickupTime;
+    private LocalDateTime deliveredTime;
 }

@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 
@@ -53,10 +54,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Cache-Control"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -66,10 +69,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors()
-                .and()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Allow preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public endpoints
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
 
@@ -84,7 +88,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/donors/**").hasAnyRole("DONOR", "STAFF", "ADMIN")
                         .requestMatchers("/api/donations/**").hasAnyRole("DONOR", "STAFF", "ADMIN")
                         .requestMatchers("/api/centers/**").hasAnyRole("DONOR", "STAFF", "ADMIN")
-                        .requestMatchers("/api/deliveries/**").hasAnyRole("STAFF", "ADMIN")
+
+                        // Driver endpoints
+                        .requestMatchers("/api/drivers/me/**").hasAnyRole("DRIVER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/drivers/me").hasAnyRole("DRIVER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/drivers").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/drivers/**").hasAnyRole("STAFF", "ADMIN")
+
+                        // Delivery endpoints - drivers can access their own deliveries
+                        .requestMatchers("/api/deliveries/my/**").hasAnyRole("DRIVER")
+                        .requestMatchers("/api/deliveries/**").hasAnyRole("DRIVER", "STAFF", "ADMIN")
+
+                        // Recipients - staff manages recipients
+                        .requestMatchers("/api/recipients/**").hasAnyRole("STAFF", "ADMIN")
 
                         // All other requests need authentication
                         .anyRequest().authenticated()

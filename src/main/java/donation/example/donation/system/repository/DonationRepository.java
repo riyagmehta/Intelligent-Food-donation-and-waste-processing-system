@@ -11,4 +11,6 @@ import java.util.List;
 public interface DonationRepository extends JpaRepository<Donation, Long> {
     List<Donation> findByStatus(DonationStatus status);
     List<Donation> findByDonorId(Long donorId);
+    List<Donation> findByCollectionCenterIdAndStatus(Long centerId, DonationStatus status);
+    List<Donation> findByCollectionCenterId(Long centerId);
 }

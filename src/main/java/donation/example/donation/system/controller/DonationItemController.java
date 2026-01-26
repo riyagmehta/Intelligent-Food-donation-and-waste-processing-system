@@ -5,14 +5,12 @@ import donation.example.donation.system.mapper.DonationItemMapper;
 import donation.example.donation.system.model.entity.CollectionCenter;
 import donation.example.donation.system.model.entity.Donation;
 import donation.example.donation.system.model.entity.DonationItem;
-import donation.example.donation.system.type.WasteStatus;
 import donation.example.donation.system.repository.CollectionCenterRepository;
 import donation.example.donation.system.repository.DonationRepository;
 import donation.example.donation.system.repository.DonationItemRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,9 +33,9 @@ public class DonationItemController {
         this.donationItemMapper = donationItemMapper;
     }
 
-    // Create a new waste record
+    // Create a new donation item
     @PostMapping
-    public ResponseEntity<DonationItemDTO> createWasteRecord(@RequestBody DonationItemDTO request) {
+    public ResponseEntity<DonationItemDTO> createDonationItem(@RequestBody DonationItemDTO request) {
         Donation donation = donationRepository.findById(request.getDonationId())
                 .orElseThrow(() -> new RuntimeException("Donation not found with id: " + request.getDonationId()));
 
@@ -48,8 +46,7 @@ public class DonationItemController {
         donationItem.setName(request.getItemName());
         donationItem.setQuantity(request.getQuantity());
         donationItem.setUnit(request.getUnit());
-        donationItem.setStatus(WasteStatus.PENDING);
-        donationItem.setWasteDate(LocalDateTime.now());
+        donationItem.setType(request.getType());
         donationItem.setDonation(donation);
         donationItem.setCollectionCenter(center);
 
@@ -57,25 +54,26 @@ public class DonationItemController {
         return ResponseEntity.ok(donationItemMapper.toDTO(savedDonationItem));
     }
 
-    // Get all waste records
+    // Get all donation items
     @GetMapping
-    public List<DonationItemDTO> getAllWaste() {
+    public List<DonationItemDTO> getAllDonationItems() {
         return donationItemRepository.findAll().stream().map(donationItemMapper::toDTO).collect(Collectors.toList());
     }
 
-    // Get waste records by status
-    @GetMapping("/status/{status}")
-    public List<DonationItemDTO> getWasteByStatus(@PathVariable WasteStatus status) {
-        return donationItemRepository.findByStatus(status).stream().map(donationItemMapper::toDTO).collect(Collectors.toList());
+    // Get donation items by donation ID
+    @GetMapping("/donation/{donationId}")
+    public List<DonationItemDTO> getItemsByDonation(@PathVariable Long donationId) {
+        return donationItemRepository.findByDonationId(donationId).stream()
+                .map(donationItemMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    // Update the status of a waste record
-    @PutMapping("/{id}/status")
-    public ResponseEntity<DonationItemDTO> updateWasteStatus(@PathVariable Long id, @RequestBody WasteStatus status) {
-        return donationItemRepository.findById(id).map(waste -> {
-            waste.setStatus(status);
-            DonationItem updatedDonationItem = donationItemRepository.save(waste);
-            return ResponseEntity.ok(donationItemMapper.toDTO(updatedDonationItem));
+    // Delete a donation item
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDonationItem(@PathVariable Long id) {
+        return donationItemRepository.findById(id).map(item -> {
+            donationItemRepository.delete(item);
+            return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
     }
 

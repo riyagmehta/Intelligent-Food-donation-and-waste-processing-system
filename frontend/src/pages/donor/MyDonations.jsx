@@ -50,8 +50,8 @@ const MyDonations = () => {
     const fetchDonations = async () => {
         try {
             setLoading(true);
-            const response = await donationAPI.getAll();
-            console.log('Fetched donations:', response.data);
+            // Use getMyDonations to only get current user's donations
+            const response = await donationAPI.getMyDonations();
             setDonations(response.data);
         } catch (error) {
             console.error('Error fetching donations:', error);
@@ -60,7 +60,6 @@ const MyDonations = () => {
                 description: 'Failed to load donations',
                 status: 'error',
                 duration: 3000,
-                isClosable: true,
             });
         } finally {
             setLoading(false);
@@ -95,9 +94,10 @@ const MyDonations = () => {
     const getStatusColor = (status) => {
         const colors = {
             PENDING: 'yellow',
+            REJECTED: 'red',
             COLLECTED: 'blue',
             DELIVERED: 'green',
-            CANCELLED: 'red',
+            PROCESSED: 'purple',
         };
         return colors[status] || 'gray';
     };
@@ -153,7 +153,6 @@ const MyDonations = () => {
                             />
                         </Box>
                         <Select
-                            placeholder="All Status"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             maxW={{ base: 'full', md: '200px' }}
@@ -161,9 +160,10 @@ const MyDonations = () => {
                         >
                             <option value="ALL">All Status</option>
                             <option value="PENDING">Pending</option>
+                            <option value="REJECTED">Rejected</option>
                             <option value="COLLECTED">Collected</option>
                             <option value="DELIVERED">Delivered</option>
-                            <option value="CANCELLED">Cancelled</option>
+                            <option value="PROCESSED">Processed</option>
                         </Select>
                     </Flex>
                 </CardBody>
