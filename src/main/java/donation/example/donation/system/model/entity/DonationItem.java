@@ -2,13 +2,10 @@ package donation.example.donation.system.model.entity;
 
 import donation.example.donation.system.type.DonationType;
 import donation.example.donation.system.type.Unit;
-import donation.example.donation.system.type.WasteStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -28,11 +25,6 @@ public class DonationItem {
 
     @Enumerated(EnumType.STRING)
     private DonationType type;
-
-    private LocalDateTime wasteDate = LocalDateTime.now();
-
-    @Enumerated(EnumType.STRING)
-    private WasteStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donation_id")

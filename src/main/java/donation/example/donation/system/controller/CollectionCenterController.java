@@ -9,6 +9,8 @@ import donation.example.donation.system.repository.CollectionCenterRepository;
 import donation.example.donation.system.repository.DonationRepository;
 import donation.example.donation.system.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +40,17 @@ public class CollectionCenterController {
         return centerRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // Get current staff's collection center
+    @GetMapping("/me")
+    public ResponseEntity<CollectionCenterDTO> getMyCenter() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return centerRepository.findByUserUsername(username)
+                .map(center -> ResponseEntity.ok(mapToDTO(center)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // Get center by ID

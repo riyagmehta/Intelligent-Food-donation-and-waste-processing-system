@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -19,23 +19,47 @@ import {
     Grid,
     GridItem,
     Divider,
+    Spinner,
+    Center,
+    Alert,
+    AlertIcon,
+    Icon,
+    Badge,
+    Flex,
+    Progress,
+    Tooltip,
 } from '@chakra-ui/react';
-import { FiPlus, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiArrowLeft, FiPackage, FiMapPin, FiInfo, FiSend, FiZap, FiCpu } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { donationAPI, donorAPI, donationItemAPI } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { donationAPI, centerAPI, donationItemAPI, aiAPI } from '../../services/api';
 
 const NewDonation = () => {
     const navigate = useNavigate();
     const toast = useToast();
-    const { user } = useAuth();
+
+    // Color mode values
     const cardBg = useColorModeValue('white', 'gray.800');
-    const borderColor = useColorModeValue('gray.200', 'gray.700');
+    const borderColor = useColorModeValue('gray.100', 'gray.700');
+    const textColor = useColorModeValue('gray.600', 'gray.400');
+    const headingColor = useColorModeValue('gray.800', 'white');
+    const hoverBg = useColorModeValue('gray.50', 'gray.700');
+    const gradientBg = useColorModeValue(
+        'linear(to-br, brand.400, teal.400, blue.400)',
+        'linear(to-br, brand.500, teal.500, blue.500)'
+    );
+    const aiGradient = useColorModeValue(
+        'linear(to-r, purple.400, pink.400)',
+        'linear(to-r, purple.500, pink.500)'
+    );
 
     const [loading, setLoading] = useState(false);
+    const [centersLoading, setCentersLoading] = useState(true);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [centers, setCenters] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
+        collectionCenterId: '',
     });
 
     const [items, setItems] = useState([
@@ -47,6 +71,28 @@ const NewDonation = () => {
             type: 'FOOD',
         },
     ]);
+
+    useEffect(() => {
+        fetchCenters();
+    }, []);
+
+    const fetchCenters = async () => {
+        try {
+            setCentersLoading(true);
+            const response = await centerAPI.getAll();
+            setCenters(response.data);
+        } catch (error) {
+            console.error('Error fetching centers:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load collection centers',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setCentersLoading(false);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -65,7 +111,7 @@ const NewDonation = () => {
 
     const addItem = () => {
         const newItem = {
-            id: items.length + 1,
+            id: Date.now(),
             name: '',
             quantity: '',
             unit: 'KG',
@@ -83,23 +129,111 @@ const NewDonation = () => {
                 description: 'At least one item is required',
                 status: 'warning',
                 duration: 2000,
-                isClosable: true,
             });
         }
+    };
+
+    // AI: Generate smart description based on items
+    const generateAiDescription = async () => {
+        const validItems = items.filter(item => item.name.trim());
+        if (validItems.length === 0) {
+            toast({
+                title: 'No items added',
+                description: 'Please add at least one item name to generate a description',
+                status: 'warning',
+                duration: 3000,
+            });
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const itemNames = validItems.map(item => {
+                const qty = item.quantity ? `${item.quantity} ${item.unit}` : '';
+                return qty ? `${item.name} (${qty})` : item.name;
+            });
+
+            const response = await aiAPI.generateDescription(itemNames);
+
+            if (response.data.success) {
+                setFormData({
+                    ...formData,
+                    description: response.data.content,
+                });
+                toast({
+                    title: 'Description Generated',
+                    description: 'AI has created a description for your donation',
+                    status: 'success',
+                    duration: 2000,
+                });
+            } else {
+                throw new Error(response.data.error);
+            }
+        } catch (error) {
+            console.error('Error generating description:', error);
+            toast({
+                title: 'AI Error',
+                description: 'Failed to generate description. Please try again.',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    // AI: Generate smart donation name based on items
+    const generateAiName = async () => {
+        const validItems = items.filter(item => item.name.trim());
+        if (validItems.length === 0) {
+            toast({
+                title: 'No items added',
+                description: 'Please add at least one item to generate a name',
+                status: 'warning',
+                duration: 3000,
+            });
+            return;
+        }
+
+        // Generate a simple name based on items
+        const itemNames = validItems.map(item => item.name);
+        if (itemNames.length === 1) {
+            setFormData({ ...formData, name: itemNames[0] + ' Donation' });
+        } else if (itemNames.length === 2) {
+            setFormData({ ...formData, name: itemNames.join(' & ') + ' Donation' });
+        } else {
+            setFormData({ ...formData, name: `${itemNames[0]} & ${itemNames.length - 1} more items` });
+        }
+
+        toast({
+            title: 'Name Generated',
+            description: 'Donation name has been set based on your items',
+            status: 'success',
+            duration: 2000,
+        });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
-        // Validate
         if (!formData.name.trim()) {
             toast({
                 title: 'Validation Error',
                 description: 'Please enter a donation name',
                 status: 'error',
                 duration: 3000,
-                isClosable: true,
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (!formData.collectionCenterId) {
+            toast({
+                title: 'Validation Error',
+                description: 'Please select a collection center',
+                status: 'error',
+                duration: 3000,
             });
             setLoading(false);
             return;
@@ -114,50 +248,38 @@ const NewDonation = () => {
                 description: 'Please fill in all item details',
                 status: 'error',
                 duration: 3000,
-                isClosable: true,
             });
             setLoading(false);
             return;
         }
 
         try {
-            // Step 1: Get or create donor
-            const donorsResponse = await donorAPI.getAll();
-            let donor = donorsResponse.data.find(d => d.user?.username === user.username);
-
-            if (!donor) {
-                // Create donor if doesn't exist
-                const donorData = {
-                    name: user.username,
-                    contact: 'N/A',
-                    location: 'N/A',
-                    user: {
-                        username: user.username,
-                    }
-                };
-                const createDonorResponse = await donorAPI.create(donorData);
-                donor = createDonorResponse.data;
-            }
-
-            // Step 2: Create donation
             const donationData = {
                 name: formData.name,
-                status: 'PENDING',
+                collectionCenterId: parseInt(formData.collectionCenterId),
             };
 
-            const donationResponse = await donationAPI.create(donor.id, donationData);
+            const donationResponse = await donationAPI.createMyDonation(donationData);
             const createdDonation = donationResponse.data;
 
-            // Step 3: Create donation items
-            // Note: You might need to add an endpoint to create items or include them in donation creation
-            // For now, we'll just create the donation
+            const itemPromises = items.map(item =>
+                donationItemAPI.create({
+                    itemName: item.name,
+                    quantity: parseInt(item.quantity),
+                    unit: item.unit,
+                    type: item.type,
+                    donationId: createdDonation.id,
+                    collectionCenterId: parseInt(formData.collectionCenterId),
+                })
+            );
+
+            await Promise.all(itemPromises);
 
             toast({
                 title: 'Donation Created',
-                description: 'Your donation has been submitted successfully',
+                description: 'Your donation has been submitted and is pending approval',
                 status: 'success',
                 duration: 3000,
-                isClosable: true,
             });
 
             navigate('/donations');
@@ -165,185 +287,416 @@ const NewDonation = () => {
             console.error('Error creating donation:', error);
             toast({
                 title: 'Error',
-                description: error.response?.data?.message || 'Failed to create donation',
+                description: error.response?.data?.message || 'Failed to create donation. Make sure you have a donor profile.',
                 status: 'error',
-                duration: 3000,
-                isClosable: true,
+                duration: 5000,
             });
         } finally {
             setLoading(false);
         }
     };
 
+    // Calculate completion progress
+    const getCompletionProgress = () => {
+        let completed = 0;
+        if (formData.name.trim()) completed += 33;
+        if (formData.collectionCenterId) completed += 33;
+        if (items.every(item => item.name.trim() && item.quantity)) completed += 34;
+        return completed;
+    };
+
+    if (centersLoading) {
+        return (
+            <Center h="400px">
+                <VStack spacing={4}>
+                    <Spinner size="xl" color="brand.500" thickness="4px" />
+                    <Text color={textColor}>Loading collection centers...</Text>
+                </VStack>
+            </Center>
+        );
+    }
+
     return (
-        <VStack spacing={6} align="stretch">
-            {/* Header */}
-            <HStack spacing={4}>
-                <IconButton
-                    icon={<FiArrowLeft />}
-                    variant="ghost"
-                    onClick={() => navigate('/donations')}
-                    aria-label="Go back"
-                />
-                <Box>
-                    <Heading size="lg">Create New Donation</Heading>
-                    <Text color="gray.600">Fill in the details of your donation</Text>
-                </Box>
-            </HStack>
+        <VStack spacing={8} align="stretch">
+            {/* Header Card */}
+            <Card
+                bg={cardBg}
+                borderRadius="2xl"
+                border="1px"
+                borderColor={borderColor}
+                boxShadow={useColorModeValue('lg', 'dark-lg')}
+                overflow="hidden"
+            >
+                <Box h="4px" bgGradient={gradientBg} />
+                <CardBody p={6}>
+                    <Flex align="center" gap={4} flexWrap="wrap">
+                        <IconButton
+                            icon={<FiArrowLeft />}
+                            variant="ghost"
+                            onClick={() => navigate('/donations')}
+                            aria-label="Go back"
+                            borderRadius="xl"
+                            size="lg"
+                        />
+                        <Box flex={1}>
+                            <Badge colorScheme="brand" borderRadius="full" px={3} py={1} mb={2}>
+                                NEW DONATION
+                            </Badge>
+                            <Heading size="lg" color={headingColor}>Create New Donation</Heading>
+                            <Text color={textColor} mt={1}>Fill in the details of your donation</Text>
+                        </Box>
+                        <Box textAlign="right" display={{ base: 'none', md: 'block' }}>
+                            <Text fontSize="sm" color={textColor} mb={1}>Completion</Text>
+                            <HStack spacing={2}>
+                                <Progress
+                                    value={getCompletionProgress()}
+                                    size="sm"
+                                    w="100px"
+                                    borderRadius="full"
+                                    colorScheme="brand"
+                                    bg={useColorModeValue('gray.100', 'gray.700')}
+                                />
+                                <Text fontWeight="bold" color={headingColor}>{getCompletionProgress()}%</Text>
+                            </HStack>
+                        </Box>
+                    </Flex>
+                </CardBody>
+            </Card>
+
+            {centers.length === 0 && (
+                <Alert status="warning" borderRadius="xl">
+                    <AlertIcon />
+                    No collection centers available. Please contact admin to add centers.
+                </Alert>
+            )}
 
             <form onSubmit={handleSubmit}>
-                {/* Basic Information */}
-                <Card bg={cardBg} border="1px" borderColor={borderColor} boxShadow="sm" mb={6}>
-                    <CardBody>
-                        <VStack spacing={4} align="stretch">
-                            <Heading size="md" mb={2}>
-                                Basic Information
-                            </Heading>
-
-                            <FormControl isRequired>
-                                <FormLabel>Donation Name</FormLabel>
-                                <Input
-                                    name="name"
-                                    placeholder="e.g., Fresh Vegetables, Canned Foods"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    size="lg"
-                                />
-                            </FormControl>
-
-                            <FormControl>
-                                <FormLabel>Description (Optional)</FormLabel>
-                                <Textarea
-                                    name="description"
-                                    placeholder="Add any additional details about this donation..."
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    rows={3}
-                                />
-                            </FormControl>
-                        </VStack>
-                    </CardBody>
-                </Card>
-
-                {/* Donation Items */}
-                <Card bg={cardBg} border="1px" borderColor={borderColor} boxShadow="sm" mb={6}>
-                    <CardBody>
-                        <HStack justify="space-between" mb={4}>
-                            <Heading size="md">Donation Items</Heading>
+                {/* Donation Items - Move to top so AI can use them */}
+                <Card
+                    bg={cardBg}
+                    border="1px"
+                    borderColor={borderColor}
+                    borderRadius="2xl"
+                    boxShadow={useColorModeValue('lg', 'dark-lg')}
+                    mb={6}
+                    overflow="hidden"
+                >
+                    <CardBody p={0}>
+                        <Flex p={6} pb={4} justify="space-between" align="center">
+                            <HStack spacing={3}>
+                                <Box
+                                    bgGradient="linear(to-br, purple.400, pink.400)"
+                                    p={3}
+                                    borderRadius="xl"
+                                >
+                                    <Icon as={FiPackage} color="white" boxSize={5} />
+                                </Box>
+                                <Box>
+                                    <Heading size="md" color={headingColor}>Donation Items</Heading>
+                                    <Text fontSize="sm" color={textColor}>{items.length} item(s) added</Text>
+                                </Box>
+                            </HStack>
                             <Button
                                 leftIcon={<FiPlus />}
-                                colorScheme="teal"
+                                colorScheme="brand"
                                 variant="outline"
                                 size="sm"
                                 onClick={addItem}
+                                borderRadius="lg"
                             >
                                 Add Item
                             </Button>
-                        </HStack>
+                        </Flex>
+                        <Divider borderColor={borderColor} />
 
-                        <VStack spacing={4} align="stretch">
+                        <VStack spacing={0} align="stretch">
                             {items.map((item, index) => (
                                 <Box key={item.id}>
-                                    {index > 0 && <Divider my={4} />}
-                                    <Grid templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }} gap={4}>
-                                        <GridItem colSpan={{ base: 12, md: 5 }}>
-                                            <FormControl isRequired>
-                                                <FormLabel fontSize="sm">Item Name</FormLabel>
-                                                <Input
-                                                    placeholder="e.g., Rice, Apples, Milk"
-                                                    value={item.name}
-                                                    onChange={(e) =>
-                                                        handleItemChange(item.id, 'name', e.target.value)
-                                                    }
+                                    {index > 0 && <Divider borderColor={borderColor} />}
+                                    <Box
+                                        p={6}
+                                        _hover={{ bg: hoverBg }}
+                                        transition="all 0.2s"
+                                    >
+                                        <Grid templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }} gap={4} alignItems="end">
+                                            <GridItem colSpan={{ base: 12, md: 5 }}>
+                                                <FormControl isRequired>
+                                                    <FormLabel fontSize="sm" fontWeight="600" color={headingColor}>
+                                                        Item Name
+                                                    </FormLabel>
+                                                    <Input
+                                                        placeholder="e.g., Rice, Apples, Milk"
+                                                        value={item.name}
+                                                        onChange={(e) =>
+                                                            handleItemChange(item.id, 'name', e.target.value)
+                                                        }
+                                                        borderRadius="xl"
+                                                    />
+                                                </FormControl>
+                                            </GridItem>
+
+                                            <GridItem colSpan={{ base: 6, md: 2 }}>
+                                                <FormControl isRequired>
+                                                    <FormLabel fontSize="sm" fontWeight="600" color={headingColor}>
+                                                        Quantity
+                                                    </FormLabel>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        min="1"
+                                                        value={item.quantity}
+                                                        onChange={(e) =>
+                                                            handleItemChange(item.id, 'quantity', e.target.value)
+                                                        }
+                                                        borderRadius="xl"
+                                                    />
+                                                </FormControl>
+                                            </GridItem>
+
+                                            <GridItem colSpan={{ base: 6, md: 2 }}>
+                                                <FormControl isRequired>
+                                                    <FormLabel fontSize="sm" fontWeight="600" color={headingColor}>
+                                                        Unit
+                                                    </FormLabel>
+                                                    <Select
+                                                        value={item.unit}
+                                                        onChange={(e) =>
+                                                            handleItemChange(item.id, 'unit', e.target.value)
+                                                        }
+                                                        borderRadius="xl"
+                                                    >
+                                                        <option value="KG">KG</option>
+                                                        <option value="LITERS">Liters</option>
+                                                        <option value="PIECES">Pieces</option>
+                                                        <option value="BOXES">Boxes</option>
+                                                    </Select>
+                                                </FormControl>
+                                            </GridItem>
+
+                                            <GridItem colSpan={{ base: 10, md: 2 }}>
+                                                <FormControl isRequired>
+                                                    <FormLabel fontSize="sm" fontWeight="600" color={headingColor}>
+                                                        Type
+                                                    </FormLabel>
+                                                    <Select
+                                                        value={item.type}
+                                                        onChange={(e) =>
+                                                            handleItemChange(item.id, 'type', e.target.value)
+                                                        }
+                                                        borderRadius="xl"
+                                                    >
+                                                        <option value="FOOD">Food</option>
+                                                        <option value="GROCERY">Grocery</option>
+                                                        <option value="HOUSEHOLD_SUPPLIES">Household</option>
+                                                        <option value="OTHER">Other</option>
+                                                    </Select>
+                                                </FormControl>
+                                            </GridItem>
+
+                                            <GridItem colSpan={{ base: 2, md: 1 }}>
+                                                <IconButton
+                                                    icon={<FiTrash2 />}
+                                                    colorScheme="red"
+                                                    variant="ghost"
+                                                    onClick={() => removeItem(item.id)}
+                                                    aria-label="Remove item"
+                                                    isDisabled={items.length === 1}
+                                                    borderRadius="xl"
+                                                    size="lg"
                                                 />
-                                            </FormControl>
-                                        </GridItem>
-
-                                        <GridItem colSpan={{ base: 6, md: 2 }}>
-                                            <FormControl isRequired>
-                                                <FormLabel fontSize="sm">Quantity</FormLabel>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    min="1"
-                                                    value={item.quantity}
-                                                    onChange={(e) =>
-                                                        handleItemChange(item.id, 'quantity', e.target.value)
-                                                    }
-                                                />
-                                            </FormControl>
-                                        </GridItem>
-
-                                        <GridItem colSpan={{ base: 6, md: 2 }}>
-                                            <FormControl isRequired>
-                                                <FormLabel fontSize="sm">Unit</FormLabel>
-                                                <Select
-                                                    value={item.unit}
-                                                    onChange={(e) =>
-                                                        handleItemChange(item.id, 'unit', e.target.value)
-                                                    }
-                                                >
-                                                    <option value="KG">KG</option>
-                                                    <option value="LITERS">Liters</option>
-                                                    <option value="PIECES">Pieces</option>
-                                                    <option value="BOXES">Boxes</option>
-                                                </Select>
-                                            </FormControl>
-                                        </GridItem>
-
-                                        <GridItem colSpan={{ base: 10, md: 2 }}>
-                                            <FormControl isRequired>
-                                                <FormLabel fontSize="sm">Type</FormLabel>
-                                                <Select
-                                                    value={item.type}
-                                                    onChange={(e) =>
-                                                        handleItemChange(item.id, 'type', e.target.value)
-                                                    }
-                                                >
-                                                    <option value="FOOD">Food</option>
-                                                    <option value="GROCERY">Grocery</option>
-                                                    <option value="HOUSEHOLD_SUPPLIES">Household</option>
-                                                    <option value="OTHER">Other</option>
-                                                </Select>
-                                            </FormControl>
-                                        </GridItem>
-
-                                        <GridItem colSpan={{ base: 2, md: 1 }} display="flex" alignItems="flex-end">
-                                            <IconButton
-                                                icon={<FiTrash2 />}
-                                                colorScheme="red"
-                                                variant="ghost"
-                                                onClick={() => removeItem(item.id)}
-                                                aria-label="Remove item"
-                                                isDisabled={items.length === 1}
-                                            />
-                                        </GridItem>
-                                    </Grid>
+                                            </GridItem>
+                                        </Grid>
+                                    </Box>
                                 </Box>
                             ))}
                         </VStack>
                     </CardBody>
                 </Card>
 
+                {/* Basic Information with AI Features */}
+                <Card
+                    bg={cardBg}
+                    border="1px"
+                    borderColor={borderColor}
+                    borderRadius="2xl"
+                    boxShadow={useColorModeValue('lg', 'dark-lg')}
+                    mb={6}
+                    overflow="hidden"
+                >
+                    <CardBody p={0}>
+                        <Flex p={6} pb={4} align="center" justify="space-between">
+                            <HStack spacing={3}>
+                                <Box
+                                    bgGradient={gradientBg}
+                                    p={3}
+                                    borderRadius="xl"
+                                >
+                                    <Icon as={FiPackage} color="white" boxSize={5} />
+                                </Box>
+                                <Heading size="md" color={headingColor}>Basic Information</Heading>
+                            </HStack>
+                            {/* AI Badge */}
+                            <Badge
+                                bgGradient={aiGradient}
+                                color="white"
+                                px={3}
+                                py={1}
+                                borderRadius="full"
+                                fontSize="xs"
+                            >
+                                <HStack spacing={1}>
+                                    <Icon as={FiCpu} boxSize={3} />
+                                    <Text>AI Powered</Text>
+                                </HStack>
+                            </Badge>
+                        </Flex>
+                        <Divider borderColor={borderColor} />
+                        <VStack spacing={5} align="stretch" p={6}>
+                            <FormControl isRequired>
+                                <Flex justify="space-between" align="center" mb={2}>
+                                    <FormLabel fontWeight="600" color={headingColor} mb={0}>Donation Name</FormLabel>
+                                    <Tooltip label="Generate name from items" hasArrow>
+                                        <Button
+                                            size="xs"
+                                            variant="ghost"
+                                            colorScheme="purple"
+                                            leftIcon={<FiZap />}
+                                            onClick={generateAiName}
+                                            isDisabled={items.every(item => !item.name.trim())}
+                                        >
+                                            Auto Generate
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Input
+                                    name="name"
+                                    placeholder="e.g., Fresh Vegetables, Canned Foods"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    size="lg"
+                                    borderRadius="xl"
+                                    _focus={{ borderColor: 'brand.400', boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)' }}
+                                />
+                            </FormControl>
+
+                            <FormControl isRequired>
+                                <FormLabel fontWeight="600" color={headingColor}>Collection Center</FormLabel>
+                                <Select
+                                    name="collectionCenterId"
+                                    placeholder="Select a collection center"
+                                    value={formData.collectionCenterId}
+                                    onChange={handleChange}
+                                    size="lg"
+                                    borderRadius="xl"
+                                    icon={<FiMapPin />}
+                                >
+                                    {centers.map((center) => (
+                                        <option key={center.id} value={center.id}>
+                                            {center.name} - {center.location}
+                                        </option>
+                                    ))}
+                                </Select>
+                                <Text fontSize="sm" color={textColor} mt={2}>
+                                    Your donation will be sent to this center for approval
+                                </Text>
+                            </FormControl>
+
+                            <FormControl>
+                                <Flex justify="space-between" align="center" mb={2}>
+                                    <FormLabel fontWeight="600" color={headingColor} mb={0}>Description (Optional)</FormLabel>
+                                    <Tooltip label="Generate AI description based on items" hasArrow>
+                                        <Button
+                                            size="xs"
+                                            bgGradient={aiGradient}
+                                            color="white"
+                                            leftIcon={<FiZap />}
+                                            onClick={generateAiDescription}
+                                            isLoading={aiLoading}
+                                            loadingText="Generating..."
+                                            isDisabled={items.every(item => !item.name.trim())}
+                                            _hover={{
+                                                bgGradient: 'linear(to-r, purple.500, pink.500)',
+                                            }}
+                                        >
+                                            AI Generate
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Textarea
+                                    name="description"
+                                    placeholder="Add any additional details about this donation... or click 'AI Generate' to create one automatically"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    borderRadius="xl"
+                                />
+                            </FormControl>
+                        </VStack>
+                    </CardBody>
+                </Card>
+
+                {/* Info Box */}
+                <Card
+                    bg={useColorModeValue('blue.50', 'blue.900')}
+                    border="1px"
+                    borderColor={useColorModeValue('blue.200', 'blue.700')}
+                    borderRadius="2xl"
+                    mb={6}
+                >
+                    <CardBody p={6}>
+                        <HStack spacing={4} align="flex-start">
+                            <Box
+                                bg={useColorModeValue('blue.100', 'blue.800')}
+                                p={3}
+                                borderRadius="xl"
+                            >
+                                <Icon as={FiInfo} color={useColorModeValue('blue.600', 'blue.300')} boxSize={5} />
+                            </Box>
+                            <Box>
+                                <Text fontWeight="700" color={useColorModeValue('blue.800', 'blue.100')}>
+                                    What happens next?
+                                </Text>
+                                <Text fontSize="sm" color={useColorModeValue('blue.700', 'blue.200')} mt={1}>
+                                    After you submit, the collection center staff will review and either accept or reject your donation.
+                                    You can track the status in your donations list.
+                                </Text>
+                            </Box>
+                        </HStack>
+                    </CardBody>
+                </Card>
+
                 {/* Submit Buttons */}
-                <HStack spacing={4} justify="flex-end">
+                <Flex gap={4} justify="flex-end" flexWrap="wrap">
                     <Button
                         variant="outline"
                         size="lg"
                         onClick={() => navigate('/donations')}
+                        borderRadius="xl"
+                        px={8}
                     >
                         Cancel
                     </Button>
                     <Button
                         type="submit"
-                        colorScheme="teal"
                         size="lg"
+                        bgGradient={gradientBg}
+                        color="white"
                         isLoading={loading}
                         loadingText="Creating..."
+                        isDisabled={centers.length === 0}
+                        borderRadius="xl"
+                        px={8}
+                        rightIcon={<FiSend />}
+                        _hover={{
+                            bgGradient: 'linear(to-r, brand.500, teal.500, blue.500)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'lg',
+                        }}
+                        transition="all 0.2s"
                     >
                         Create Donation
                     </Button>
-                </HStack>
+                </Flex>
             </form>
         </VStack>
     );

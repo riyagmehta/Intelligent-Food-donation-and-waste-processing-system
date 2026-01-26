@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -14,89 +15,116 @@ import {
     StatHelpText,
     StatArrow,
     Badge,
-    Table,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
     Icon,
     useColorModeValue,
     Flex,
     Progress,
+    Spinner,
+    Center,
+    useToast,
 } from '@chakra-ui/react';
 import {
     FiPackage,
     FiUsers,
     FiMapPin,
-    FiTrendingUp,
     FiAlertCircle,
-    FiCheckCircle,
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { donationAPI, donorAPI, centerAPI } from '../../services/api';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const cardBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-    // Mock data - will be replaced with API calls
-    const stats = {
-        totalDonations: 156,
-        totalDonors: 42,
-        totalCenters: 8,
-        pendingDonations: 23,
-        thisMonthGrowth: 12.5,
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalDonations: 0,
+        totalDonors: 0,
+        totalCenters: 0,
+        pendingDonations: 0,
+        thisMonthGrowth: 0,
+    });
+    const [recentDonations, setRecentDonations] = useState([]);
+    const [centers, setCenters] = useState([]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+
+            // Fetch all data in parallel
+            const [donationsRes, donorsRes, centersRes] = await Promise.all([
+                donationAPI.getAll(),
+                donorAPI.getAll(),
+                centerAPI.getAll(),
+            ]);
+
+            const donations = donationsRes.data;
+            const donors = donorsRes.data;
+            const centersData = centersRes.data;
+
+            // Calculate this month's donations
+            const now = new Date();
+            const thisMonthDonations = donations.filter(d => {
+                const donationDate = new Date(d.donationDate);
+                return donationDate.getMonth() === now.getMonth() &&
+                    donationDate.getFullYear() === now.getFullYear();
+            }).length;
+
+            // Calculate last month's donations for growth
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthDonations = donations.filter(d => {
+                const donationDate = new Date(d.donationDate);
+                return donationDate.getMonth() === lastMonth.getMonth() &&
+                    donationDate.getFullYear() === lastMonth.getFullYear();
+            }).length;
+
+            const growth = lastMonthDonations > 0
+                ? ((thisMonthDonations - lastMonthDonations) / lastMonthDonations * 100).toFixed(1)
+                : thisMonthDonations > 0 ? 100 : 0;
+
+            setStats({
+                totalDonations: donations.length,
+                totalDonors: donors.length,
+                totalCenters: centersData.length,
+                pendingDonations: donations.filter(d => d.status === 'PENDING').length,
+                thisMonthGrowth: parseFloat(growth),
+            });
+
+            // Get recent donations (last 5)
+            const sortedDonations = [...donations].sort((a, b) =>
+                new Date(b.donationDate) - new Date(a.donationDate)
+            );
+            setRecentDonations(sortedDonations.slice(0, 5));
+
+            // Set centers with capacity info
+            setCenters(centersData);
+
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load dashboard data',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setLoading(false);
+        }
     };
-
-    const recentDonations = [
-        {
-            id: 1,
-            donor: 'John Doe',
-            name: 'Fresh Vegetables',
-            date: '2024-01-13',
-            status: 'PENDING',
-            items: 3,
-        },
-        {
-            id: 2,
-            donor: 'Jane Smith',
-            name: 'Canned Foods',
-            date: '2024-01-13',
-            status: 'COLLECTED',
-            items: 5,
-        },
-        {
-            id: 3,
-            donor: 'Bob Wilson',
-            name: 'Dairy Products',
-            date: '2024-01-12',
-            status: 'PENDING',
-            items: 4,
-        },
-        {
-            id: 4,
-            donor: 'Alice Brown',
-            name: 'Bread & Pastries',
-            date: '2024-01-12',
-            status: 'DELIVERED',
-            items: 2,
-        },
-    ];
-
-    const centerCapacity = [
-        { name: 'Downtown Center', current: 450, max: 500, percentage: 90 },
-        { name: 'North Center', current: 300, max: 500, percentage: 60 },
-        { name: 'South Center', current: 420, max: 500, percentage: 84 },
-        { name: 'East Center', current: 150, max: 300, percentage: 50 },
-    ];
 
     const getStatusColor = (status) => {
         const colors = {
             PENDING: 'yellow',
             COLLECTED: 'blue',
             DELIVERED: 'green',
-            CANCELLED: 'red',
+            REJECTED: 'red',
+            PROCESSED: 'purple',
         };
         return colors[status] || 'gray';
     };
@@ -107,6 +135,10 @@ const AdminDashboard = () => {
         return 'green';
     };
 
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString();
+    };
+
     const StatCard = ({ icon, label, value, helpText, trend, color }) => (
         <Card bg={cardBg} border="1px" borderColor={borderColor} boxShadow="sm">
             <CardBody>
@@ -115,12 +147,14 @@ const AdminDashboard = () => {
                         <StatLabel color="gray.600" fontSize="sm">
                             {label}
                         </StatLabel>
-                        <StatNumber fontSize="3xl" fontWeight="bold" color={color}>
+                        <StatNumber fontSize="3xl" fontWeight="bold" color={`${color}.500`}>
                             {value}
                         </StatNumber>
                         {helpText && (
                             <StatHelpText fontSize="sm">
-                                {trend && <StatArrow type={trend > 0 ? 'increase' : 'decrease'} />}
+                                {trend !== undefined && trend !== 0 && (
+                                    <StatArrow type={trend > 0 ? 'increase' : 'decrease'} />
+                                )}
                                 {helpText}
                             </StatHelpText>
                         )}
@@ -132,6 +166,14 @@ const AdminDashboard = () => {
             </CardBody>
         </Card>
     );
+
+    if (loading) {
+        return (
+            <Center h="400px">
+                <Spinner size="xl" color="teal.500" />
+            </Center>
+        );
+    }
 
     return (
         <VStack spacing={6} align="stretch">
@@ -149,7 +191,7 @@ const AdminDashboard = () => {
                     icon={FiPackage}
                     label="Total Donations"
                     value={stats.totalDonations}
-                    helpText={`+${stats.thisMonthGrowth}% this month`}
+                    helpText={`${stats.thisMonthGrowth >= 0 ? '+' : ''}${stats.thisMonthGrowth}% this month`}
                     trend={stats.thisMonthGrowth}
                     color="teal"
                 />
@@ -192,35 +234,41 @@ const AdminDashboard = () => {
                             </Button>
                         </Flex>
 
-                        <VStack spacing={3} align="stretch">
-                            {recentDonations.map((donation) => (
-                                <Box
-                                    key={donation.id}
-                                    p={3}
-                                    borderRadius="md"
-                                    border="1px"
-                                    borderColor={borderColor}
-                                    _hover={{ bg: 'gray.50', cursor: 'pointer' }}
-                                    onClick={() => navigate(`/donations/${donation.id}`)}
-                                >
-                                    <Flex justify="space-between" align="start" mb={2}>
-                                        <Box>
-                                            <Text fontWeight="semibold">{donation.name}</Text>
-                                            <Text fontSize="sm" color="gray.600">
-                                                by {donation.donor}
-                                            </Text>
-                                        </Box>
-                                        <Badge colorScheme={getStatusColor(donation.status)} fontSize="xs">
-                                            {donation.status}
-                                        </Badge>
-                                    </Flex>
-                                    <HStack spacing={4} fontSize="sm" color="gray.600">
-                                        <Text>{donation.date}</Text>
-                                        <Text>{donation.items} items</Text>
-                                    </HStack>
-                                </Box>
-                            ))}
-                        </VStack>
+                        {recentDonations.length > 0 ? (
+                            <VStack spacing={3} align="stretch">
+                                {recentDonations.map((donation) => (
+                                    <Box
+                                        key={donation.id}
+                                        p={3}
+                                        borderRadius="md"
+                                        border="1px"
+                                        borderColor={borderColor}
+                                        _hover={{ bg: 'gray.50', cursor: 'pointer' }}
+                                        onClick={() => navigate(`/donations/${donation.id}`)}
+                                    >
+                                        <Flex justify="space-between" align="start" mb={2}>
+                                            <Box>
+                                                <Text fontWeight="semibold">{donation.name || 'Unnamed Donation'}</Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    by {donation.donor?.name || 'Unknown Donor'}
+                                                </Text>
+                                            </Box>
+                                            <Badge colorScheme={getStatusColor(donation.status)} fontSize="xs">
+                                                {donation.status}
+                                            </Badge>
+                                        </Flex>
+                                        <HStack spacing={4} fontSize="sm" color="gray.600">
+                                            <Text>{formatDate(donation.donationDate)}</Text>
+                                            <Text>{donation.collectionCenter?.name || 'No center assigned'}</Text>
+                                        </HStack>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        ) : (
+                            <Box textAlign="center" py={8}>
+                                <Text color="gray.500">No donations yet</Text>
+                            </Box>
+                        )}
                     </CardBody>
                 </Card>
 
@@ -238,34 +286,53 @@ const AdminDashboard = () => {
                             </Button>
                         </Flex>
 
-                        <VStack spacing={4} align="stretch">
-                            {centerCapacity.map((center, index) => (
-                                <Box key={index}>
-                                    <Flex justify="space-between" mb={2}>
-                                        <Text fontWeight="medium" fontSize="sm">
-                                            {center.name}
-                                        </Text>
-                                        <HStack spacing={2}>
-                                            <Text fontSize="sm" color="gray.600">
-                                                {center.current}/{center.max}
-                                            </Text>
-                                            <Badge
-                                                colorScheme={getCapacityColor(center.percentage)}
-                                                fontSize="xs"
-                                            >
-                                                {center.percentage}%
-                                            </Badge>
-                                        </HStack>
-                                    </Flex>
-                                    <Progress
-                                        value={center.percentage}
-                                        colorScheme={getCapacityColor(center.percentage)}
-                                        size="sm"
-                                        borderRadius="full"
-                                    />
-                                </Box>
-                            ))}
-                        </VStack>
+                        {centers.length > 0 ? (
+                            <VStack spacing={4} align="stretch">
+                                {centers.slice(0, 4).map((center) => {
+                                    const percentage = center.maxCapacity
+                                        ? Math.round((center.currentLoad || 0) / center.maxCapacity * 100)
+                                        : 0;
+                                    return (
+                                        <Box key={center.id}>
+                                            <Flex justify="space-between" mb={2}>
+                                                <Text fontWeight="medium" fontSize="sm">
+                                                    {center.name}
+                                                </Text>
+                                                <HStack spacing={2}>
+                                                    <Text fontSize="sm" color="gray.600">
+                                                        {center.currentLoad || 0}/{center.maxCapacity || 0}
+                                                    </Text>
+                                                    <Badge
+                                                        colorScheme={getCapacityColor(percentage)}
+                                                        fontSize="xs"
+                                                    >
+                                                        {percentage}%
+                                                    </Badge>
+                                                </HStack>
+                                            </Flex>
+                                            <Progress
+                                                value={percentage}
+                                                colorScheme={getCapacityColor(percentage)}
+                                                size="sm"
+                                                borderRadius="full"
+                                            />
+                                        </Box>
+                                    );
+                                })}
+                            </VStack>
+                        ) : (
+                            <Box textAlign="center" py={8}>
+                                <Text color="gray.500">No centers registered</Text>
+                                <Button
+                                    mt={4}
+                                    colorScheme="teal"
+                                    size="sm"
+                                    onClick={() => navigate('/centers')}
+                                >
+                                    Add Center
+                                </Button>
+                            </Box>
+                        )}
                     </CardBody>
                 </Card>
             </Grid>

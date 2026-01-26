@@ -17,20 +17,29 @@ public class Delivery {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "donation_id", nullable = false)
     private Donation donation;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_center_id", nullable = false)
     private CollectionCenter fromCenter;
 
-    private String destinationAddress;
-    private String driverName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id")
+    private DeliveryPartner driver;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id")
+    private Recipient recipient;
 
     @Enumerated(EnumType.STRING)
-    private DeliveryStatus status;
+    private DeliveryStatus status = DeliveryStatus.ASSIGNED;
 
-    private LocalDateTime pickupTime;
-    private LocalDateTime deliveryTime;
+    private String notes;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime scheduledPickupTime;
+    private LocalDateTime actualPickupTime;
+    private LocalDateTime deliveredTime;
 }

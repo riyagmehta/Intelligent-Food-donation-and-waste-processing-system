@@ -7,8 +7,11 @@ public enum Unit {
     KG,
     GRAM,
     LITRE,
+    LITERS,  // Alias for LITRE
     ML,
-    UNITS, // For items like cans or boxes
+    UNITS,
+    PIECES,  // Alias for UNITS
+    BOXES,
     LOAVES,
     OTHER;
 

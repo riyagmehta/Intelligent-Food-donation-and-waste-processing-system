@@ -8,7 +8,14 @@ import MyDonations from './pages/donor/MyDonations';
 import NewDonation from './pages/donor/NewDonation';
 import AllDonations from './pages/admin/AllDonations';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffDeliveries from './pages/staff/StaffDeliveries';
+import StaffRecipients from './pages/staff/StaffRecipients';
+import DriverDashboard from './pages/driver/DriverDashboard';
+import DriverDeliveries from './pages/driver/DriverDeliveries';
 import Centers from './pages/Centers';
+import Profile from './pages/Profile';
+import DonationDetail from './pages/DonationDetail';
 import { Center, Spinner } from '@chakra-ui/react';
 
 function App() {
@@ -34,8 +41,14 @@ function App() {
 
   // Role-based dashboard redirect
   const getDashboardPath = (role) => {
-    if (role === 'ROLE_ADMIN' || role === 'ROLE_STAFF') {
+    if (role === 'ROLE_ADMIN') {
       return '/admin/dashboard';
+    }
+    if (role === 'ROLE_STAFF') {
+      return '/staff/dashboard';
+    }
+    if (role === 'ROLE_DRIVER') {
+      return '/driver/dashboard';
     }
     return '/dashboard';
   };
@@ -91,7 +104,61 @@ function App() {
           }
         />
 
-        {/* Admin/Staff Routes */}
+        {/* Donation Detail (Shared) */}
+        <Route
+          path="/donations/:id"
+          element={
+            <ProtectedRoute>
+              <DonationDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Staff Routes */}
+        <Route
+          path="/staff/dashboard"
+          element={
+            <ProtectedRoute>
+              <StaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/deliveries"
+          element={
+            <ProtectedRoute>
+              <StaffDeliveries />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/recipients"
+          element={
+            <ProtectedRoute>
+              <StaffRecipients />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Driver Routes */}
+        <Route
+          path="/driver/dashboard"
+          element={
+            <ProtectedRoute>
+              <DriverDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/deliveries"
+          element={
+            <ProtectedRoute>
+              <DriverDeliveries />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes */}
         <Route
           path="/admin/dashboard"
           element={
@@ -114,7 +181,15 @@ function App() {
           path="/centers"
           element={
             <ProtectedRoute>
-              <Centers isAdmin={user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_STAFF'} />
+              <Centers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
@@ -122,6 +197,14 @@ function App() {
         {/* Default Route */}
         <Route
           path="/"
+          element={
+            <Navigate to={user ? getDashboardPath(user.role) : "/login"} />
+          }
+        />
+
+        {/* Catch-all redirect */}
+        <Route
+          path="*"
           element={
             <Navigate to={user ? getDashboardPath(user.role) : "/login"} />
           }

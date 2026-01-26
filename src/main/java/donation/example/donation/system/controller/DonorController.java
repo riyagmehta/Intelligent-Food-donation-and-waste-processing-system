@@ -38,18 +38,23 @@ public class DonorController {
                 .collect(Collectors.toList());
     }
 
+    // Get current donor's profile (for logged-in donor)
+    @GetMapping("/me")
+    public ResponseEntity<DonorDTO> getMyDonorProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return donorRepository.findByUserUsername(username)
+                .map(donor -> ResponseEntity.ok(donorMapper.donorToDonorDTO(donor)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // Get donor by ID
     @GetMapping("/{id}")
     public ResponseEntity<DonorDTO> getDonorById(@PathVariable Long id) {
         return donorRepository.findById(id)
                 .map(donor -> ResponseEntity.ok(donorMapper.donorToDonorDTO(donor)))
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/by-type/{type}")
-    public List<DonorDTO> getDonorsByDonationType(@PathVariable DonationType type) {
-        // TODO - does it really needed ?
-        return null;
     }
 
     // Create new donor - FIXED VERSION
