@@ -29,6 +29,7 @@ import { FiPackage, FiClock, FiCheckCircle, FiTrendingUp, FiPlus, FiArrowRight, 
 import { useNavigate } from 'react-router-dom';
 import { donationAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { RecentThankYouMessages } from '../../components/ai';
 
 const DonorDashboard = () => {
     const navigate = useNavigate();
@@ -362,6 +363,9 @@ const DonorDashboard = () => {
                     </CardBody>
                 </Card>
             )}
+
+            {/* Recent Thank You Messages */}
+            <RecentThankYouMessages />
 
             {/* Recent Donations Table */}
             <Card

@@ -126,15 +126,36 @@ export const recipientAPI = {
 
 // AI API - Gemini powered features
 export const aiAPI = {
-  // Generate smart donation description based on items
+  // Generate smart donation description based on items (not saved)
   generateDescription: (items) => api.post('/ai/generate-description', { items }),
 
-  // Get food handling and storage tips
+  // Get food handling and storage tips (legacy - not saved)
   getFoodTips: (items) => api.post('/ai/food-tips', { items }),
 
-  // Generate personalized thank you message
+  // Generate and save food tips for a donation
+  generateAndSaveFoodTips: (donationId, items) =>
+    api.post('/ai/food-tips/save', { donationId, items }),
+
+  // Get saved food tips for a donation
+  getSavedFoodTips: (donationId) => api.get(`/ai/food-tips/${donationId}`),
+
+  // Generate personalized thank you message (legacy - not saved)
   generateThankYou: (donorName, items, date) =>
     api.post('/ai/thank-you', { donorName, items, date }),
+
+  // Generate and save thank you message (Staff/Admin only)
+  generateAndSaveThankYou: (donationId, donorName, items, date) =>
+    api.post('/ai/thank-you/save', { donationId, donorName, items, date }),
+
+  // Get saved thank you message for a donation
+  getSavedThankYou: (donationId) => api.get(`/ai/thank-you/${donationId}`),
+
+  // Get recent thank you messages for current donor
+  getMyThankYouMessages: () => api.get('/ai/thank-you/my'),
+
+  // Check if content exists for a donation
+  checkContentExists: (donationId, contentType) =>
+    api.get(`/ai/exists/${donationId}/${contentType}`),
 };
 
 export default api;

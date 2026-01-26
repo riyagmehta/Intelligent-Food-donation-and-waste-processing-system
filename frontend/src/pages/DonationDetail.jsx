@@ -442,17 +442,18 @@ const DonationDetail = () => {
 
                     {/* AI Food Tips Card */}
                     {items.length > 0 && (
-                        <FoodTipsCard items={items} />
+                        <FoodTipsCard donationId={donation.id} items={items} />
                     )}
 
-                    {/* AI Thank You Card - Show for completed donations */}
-                    {donation.status === 'DELIVERED' || donation.status === 'PROCESSED' ? (
+                    {/* AI Thank You Card - Staff can generate, donors can view */}
+                    {items.length > 0 && (
                         <ThankYouCard
+                            donationId={donation.id}
                             donorName={donation.donor?.name}
                             items={items}
                             date={formatDate(donation.donationDate)}
                         />
-                    ) : null}
+                    )}
                 </VStack>
 
                 {/* Actions Card */}

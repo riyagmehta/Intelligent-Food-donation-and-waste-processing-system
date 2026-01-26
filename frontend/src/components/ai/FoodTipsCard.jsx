@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -11,19 +11,20 @@ import {
     Icon,
     useColorModeValue,
     Spinner,
-    Badge,
     Divider,
     Collapse,
     useDisclosure,
     Flex,
 } from '@chakra-ui/react';
-import { FiCpu, FiZap, FiThermometer, FiClock, FiAlertTriangle, FiInfo, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiCpu, FiZap, FiThermometer, FiClock, FiAlertTriangle, FiInfo, FiChevronDown, FiChevronUp, FiUser, FiCalendar } from 'react-icons/fi';
 import { aiAPI } from '../../services/api';
 
-const FoodTipsCard = ({ items = [] }) => {
+const FoodTipsCard = ({ donationId, items = [] }) => {
     const { isOpen, onToggle } = useDisclosure();
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [tips, setTips] = useState(null);
+    const [savedContent, setSavedContent] = useState(null);
     const [error, setError] = useState(null);
 
     const cardBg = useColorModeValue('white', 'gray.800');
@@ -34,6 +35,44 @@ const FoodTipsCard = ({ items = [] }) => {
         'linear(to-r, green.400, teal.400)',
         'linear(to-r, green.500, teal.500)'
     );
+
+    // Load saved tips on mount
+    useEffect(() => {
+        if (donationId) {
+            loadSavedTips();
+        } else {
+            setInitialLoading(false);
+        }
+    }, [donationId]);
+
+    const loadSavedTips = async () => {
+        try {
+            setInitialLoading(true);
+            const response = await aiAPI.getSavedFoodTips(donationId);
+            if (response.data.exists) {
+                setSavedContent(response.data);
+                // Parse the saved content
+                try {
+                    const parsedTips = JSON.parse(response.data.content);
+                    setTips(parsedTips);
+                } catch {
+                    setTips({
+                        summary: response.data.content,
+                        storageTips: '',
+                        shelfLife: '',
+                        spoilageSigns: '',
+                        handlingTips: ''
+                    });
+                }
+                // Auto-open if tips exist
+                if (!isOpen) onToggle();
+            }
+        } catch (err) {
+            console.error('Error loading saved tips:', err);
+        } finally {
+            setInitialLoading(false);
+        }
+    };
 
     const fetchTips = async () => {
         if (items.length === 0) return;
@@ -46,7 +85,13 @@ const FoodTipsCard = ({ items = [] }) => {
                 typeof item === 'string' ? item : item.itemName || item.name
             );
 
-            const response = await aiAPI.getFoodTips(itemNames);
+            // Use the save endpoint if donationId is available
+            let response;
+            if (donationId) {
+                response = await aiAPI.generateAndSaveFoodTips(donationId, itemNames);
+            } else {
+                response = await aiAPI.getFoodTips(itemNames);
+            }
 
             if (response.data.success) {
                 // Parse JSON response
@@ -63,6 +108,10 @@ const FoodTipsCard = ({ items = [] }) => {
                         handlingTips: ''
                     });
                 }
+                // Reload to get saved content details if donationId exists
+                if (donationId) {
+                    loadSavedTips();
+                }
                 if (!isOpen) onToggle();
             } else {
                 throw new Error(response.data.error);
@@ -73,6 +122,17 @@ const FoodTipsCard = ({ items = [] }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
     const TipItem = ({ icon, label, value, color }) => {
@@ -96,6 +156,27 @@ const FoodTipsCard = ({ items = [] }) => {
     };
 
     if (items.length === 0) return null;
+
+    // Show loading state
+    if (initialLoading) {
+        return (
+            <Card
+                bg={cardBg}
+                border="1px"
+                borderColor={borderColor}
+                borderRadius="2xl"
+                boxShadow={useColorModeValue('lg', 'dark-lg')}
+                overflow="hidden"
+            >
+                <Box h="4px" bgGradient={aiGradient} />
+                <CardBody p={6}>
+                    <Flex justify="center" align="center" py={4}>
+                        <Spinner size="md" color="green.500" />
+                    </Flex>
+                </CardBody>
+            </Card>
+        );
+    }
 
     return (
         <Card
@@ -203,6 +284,26 @@ const FoodTipsCard = ({ items = [] }) => {
                                 value={tips.handlingTips}
                                 color="teal"
                             />
+
+                            {savedContent && (
+                                <>
+                                    <Divider borderColor={borderColor} />
+                                    <HStack justify="space-between" wrap="wrap" spacing={4}>
+                                        <HStack spacing={2}>
+                                            <Icon as={FiUser} color={textColor} boxSize={3} />
+                                            <Text fontSize="xs" color={textColor}>
+                                                By: {savedContent.generatedByUsername}
+                                            </Text>
+                                        </HStack>
+                                        <HStack spacing={2}>
+                                            <Icon as={FiCalendar} color={textColor} boxSize={3} />
+                                            <Text fontSize="xs" color={textColor}>
+                                                {formatDate(savedContent.generatedAt)}
+                                            </Text>
+                                        </HStack>
+                                    </HStack>
+                                </>
+                            )}
                         </VStack>
                     )}
                 </Collapse>
