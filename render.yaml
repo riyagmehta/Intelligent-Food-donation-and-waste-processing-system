@@ -1,25 +1,11 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: donation-system-db
-    env: docker
-    plan: free
-    databases:
-      - name: donation_db
-        user: donation_user
-
-  # Spring Boot Backend
   - type: web
     name: donation-system-backend
-    env: java
+    runtime: java
     plan: free
     buildCommand: "./mvnw clean package -DskipTests"
     startCommand: "java -jar target/*.jar"
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: donation-system-db
-          property: connectionString
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: donation-system-db
@@ -35,12 +21,10 @@ services:
       - key: GEMINI_API_KEY
         sync: false
     healthCheckPath: /actuator/health
-    autoDeploy: true
 
-  # React Frontend
   - type: web
     name: donation-system-frontend
-    env: static
+    runtime: static
     plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: frontend/dist
@@ -51,4 +35,9 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://donation-system-backend.onrender.com
-    autoDeploy: true
+
+databases:
+  - name: donation-system-db
+    databaseName: donation_db
+    user: donation_user
+    plan: free
