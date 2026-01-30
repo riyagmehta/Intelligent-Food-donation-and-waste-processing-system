@@ -1,7 +1,7 @@
 services:
   - type: web
     name: donation-system-backend
-    runtime: java
+    env: java
     plan: free
     buildCommand: "./mvnw clean package -DskipTests"
     startCommand: "java -jar target/*.jar"
@@ -24,7 +24,7 @@ services:
 
   - type: web
     name: donation-system-frontend
-    runtime: static
+    env: static
     plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: frontend/dist
