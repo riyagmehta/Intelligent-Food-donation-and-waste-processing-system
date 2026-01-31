@@ -6,7 +6,7 @@ services:
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://db.rttbesxmqlwmzjpaxbmx.supabase.co:6543/postgres?user=postgres&password=iR7rtHU497ZBqoKI
+        value: jdbc:postgresql://db.rttbesxmqlwmzjpaxbmx.supabase.co:6543/postgres?user=postgres&password=iR7rtHU497ZBqoKI&sslmode=require
       - key: SPRING_DATASOURCE_USERNAME
         value: postgres
       - key: SPRING_DATASOURCE_PASSWORD
