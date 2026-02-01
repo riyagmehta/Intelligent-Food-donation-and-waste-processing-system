@@ -6,14 +6,13 @@ services:
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://db.rttbesxmqlwmzjpaxbmx.supabase.co:6543/postgres?user=postgres&password=iR7rtHU497ZBqoKI&sslmode=require
+        value: jdbc:postgresql://neondb_owner:npg_mAJxKRSr03ap@ep-wispy-cloud-ahm1khc2-pooler.c-3.us-east-1.aws.neon.tech:5432/neondb?sslmode=require&options=endpoint%3Dep-wispy-cloud-ahm1khc2-pooler
       - key: SPRING_DATASOURCE_USERNAME
-        value: postgres
+        value: neondb_owner
       - key: SPRING_DATASOURCE_PASSWORD
-        value: iR7rtHU497ZBqoKI
+        value: npg_mAJxKRSr03ap
       - key: GEMINI_API_KEY
         value: AIzaSyBR-6VZGjm_JPFCh8NHv-opGqsqE6kc1ko
-
   - type: web
     name: donation-system-frontend
     runtime: static
