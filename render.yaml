@@ -25,4 +25,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://donation-system-backend.onrender.com
+        value: https://intelligent-food-donation-and-waste.onrender.com
