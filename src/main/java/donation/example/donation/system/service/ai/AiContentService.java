@@ -40,9 +40,7 @@ public class AiContentService {
         this.geminiService = geminiService;
     }
 
-    /**
-     * Get current logged-in user
-     */
+    
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username;
@@ -55,9 +53,7 @@ public class AiContentService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    /**
-     * Generate and save thank you message (Staff only)
-     */
+   
     @Transactional
     public AiResponse generateAndSaveThankYou(ThankYouGenerateRequest request) {
         try {
@@ -118,9 +114,7 @@ public class AiContentService {
         }
     }
 
-    /**
-     * Generate and save food tips
-     */
+   
     @Transactional
     public AiResponse generateAndSaveFoodTips(FoodTipsGenerateRequest request) {
         try {
@@ -167,9 +161,7 @@ public class AiContentService {
         }
     }
 
-    /**
-     * Get saved content for a donation
-     */
+    
     public SavedContentResponse getSavedContent(Long donationId, AiContentType contentType) {
         Optional<AiGeneratedContent> content = aiContentRepository
                 .findByDonationIdAndContentType(donationId, contentType);
@@ -191,9 +183,7 @@ public class AiContentService {
         return SavedContentResponse.notFound();
     }
 
-    /**
-     * Get recent thank you messages for current donor
-     */
+   
     public List<SavedContentResponse> getMyThankYouMessages() {
         User currentUser = getCurrentUser();
 
@@ -215,9 +205,7 @@ public class AiContentService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Check if content exists for a donation
-     */
+    
     public boolean contentExists(Long donationId, AiContentType contentType) {
         return aiContentRepository.existsByDonationIdAndContentType(donationId, contentType);
     }

@@ -36,9 +36,7 @@ public class GeminiService {
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Generate a smart donation description based on food items
-     */
+   
     public AiResponse generateDescription(List<String> items) {
         try {
             String itemsStr = String.join(", ", items);
@@ -55,9 +53,7 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Generate food handling tips based on food items
-     */
+    
     public AiResponse getFoodHandlingTips(List<String> items) {
         try {
             String itemsStr = String.join(", ", items);
@@ -74,9 +70,7 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Generate a personalized thank you message for donors
-     */
+   
     public AiResponse generateThankYouMessage(String donorName, List<String> items, String date) {
         try {
             String itemsStr = String.join(", ", items);
@@ -95,9 +89,7 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Call Gemini API with the given prompt
-     */
+    
     private String callGeminiApi(String prompt) throws Exception {
         String url = apiUrl + "?key=" + apiKey;
 
